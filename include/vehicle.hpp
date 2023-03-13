@@ -2,9 +2,9 @@
 // Headers da biblioteca GLM: criação de matrizes e vetores.
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include "sceneObject.hpp"
 
-
-class Vehicle{
+class Vehicle:SceneObject{
 
     public:
         Vehicle(glm::vec4 position);
