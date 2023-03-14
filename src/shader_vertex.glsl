@@ -62,6 +62,6 @@ void main()
     normal.w = 0.0;
 
     // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
-    texcoords = texture_coefficients;
+    texcoords = texture_coefficients *80;
 }
 
