@@ -52,6 +52,7 @@
 #include "sceneObject.hpp"
 #include "renderer.hpp"
 #include "terrain.hpp"
+#include "entity.hpp"
 
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
@@ -148,7 +149,7 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-
+bool tecla_A_pressionada = false,tecla_D_pressionada = false,tecla_S_pressionada = false,tecla_W_pressionada=false; 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
@@ -189,29 +190,25 @@ int main(int argc, char* argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/grass.jpeg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    LoadTextureImage("../../data/textures/GoKart_[Albedo].tga.png"); // TextureImage1
     #define SPHERE 0
     #define BUNNY  1
     #define PLANE  2
-    #define TERRAIN 3 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     Terrain terrain = Terrain();
     VAO terrainVao = VAO();
     SceneObject terrainmodel;
     terrainmodel = terrain.generateTerrain(terrainVao);
-    terrainmodel.setObjectID(TERRAIN);
+    terrainmodel.setObjectID(PLANE);
 
-    SceneObject spheremodel;
-    spheremodel.loadFromOBJFileName("../../data/kart.obj");
-    spheremodel.setObjectID(SPHERE);
 
     SceneObject bunnymodel;
-    bunnymodel.loadFromOBJFileName("../../data/miku.obj");
+    bunnymodel.loadFromOBJFileName("../../data/GoKart.obj");
     bunnymodel.setObjectID(BUNNY);
-    
-    SceneObject planemodel;
-    planemodel.loadFromOBJFileName("../../data/plane.obj");
-    planemodel.setObjectID(PLANE);
+    Entity instanceOfBunny = Entity(bunnymodel);//default values of Entity()
+
+
+
 
     if ( argc > 1 )
     {
@@ -221,6 +218,9 @@ int main(int argc, char* argv[])
 
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
+    float prev_time = (float)glfwGetTime();
+    float speed = 5.5f;
+    glm::vec4 camera_position_c  = glm::vec4(2.0f,3.0f,2.0f,1.0f); // Ponto "c", centro da câmera
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!(windowManager->shouldCloseWindow()))
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
         // Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
         //
         //           R     G     B     A
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.2f, 0.70f, 0.8f, 1.0f);
 
         // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
@@ -257,10 +257,51 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
+        //glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_view_vector = glm::vec4(x,-y,z,0.0f);  // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        
+        glm::vec4 w = -camera_view_vector;
+        glm::vec4 u = crossproduct(camera_up_vector,w);
+        w = w / norm(w);
+        u = u / norm(u);
+
+        float current_time = (float)glfwGetTime();
+        float delta_t = current_time - prev_time;
+        prev_time = current_time;
+        glm::vec4 v;
+        // Realiza movimentação de objetos
+        if (tecla_D_pressionada){
+            // Movimenta câmera para direita
+            v = (u * speed * delta_t);
+            instanceOfBunny.increasePosition(v.x,v.y,v.z);
+            camera_position_c += u * speed * delta_t;
+        }
+
+        // Realiza movimentação de objetos
+        if (tecla_S_pressionada){
+            // Movimenta câmera para tras
+            v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t);
+            instanceOfBunny.increasePosition(v.x,v.y,v.z);
+            camera_position_c += (glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t;
+        }
+
+        // Realiza movimentação de objetos
+        if (tecla_A_pressionada){
+            // Movimenta câmera para esquerda
+            v =((-u) * speed * delta_t);
+            instanceOfBunny.increasePosition(v.x,v.y,v.z);
+            camera_position_c += (-u) * speed * delta_t;
+        }
+
+        // Realiza movimentação de objetos
+        if (tecla_W_pressionada){
+            // Movimenta câmera para frente
+            v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t);
+            camera_position_c += -(glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t;
+
+            instanceOfBunny.increasePosition(v.x,v.y,v.z);
+        }
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -303,18 +344,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(renderer.g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(renderer.g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        renderer.render(spheremodel,model);
-
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-
-        renderer.render(bunnymodel,model);
+        // Desenhamos o modelo do coelho;
+        renderer.render(instanceOfBunny.getObject(),instanceOfBunny.getTransformationMatrix());
 
         // Desenhamos o plano do chão
         //model = Matrix_Translate(0.0f,-1.1f,0.0f);
@@ -976,10 +1007,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_AngleX = 0.0f;
         g_AngleY = 0.0f;
         g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
     }
 
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
@@ -1000,12 +1027,52 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         g_ShowInfoText = !g_ShowInfoText;
     }
 
-    // Se o usuário apertar a tecla R, recarregamos os shaders dos arquivos "shader_fragment.glsl" e "shader_vertex.glsl".
-    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    if (key == GLFW_KEY_W)
     {
-        fprintf(stdout,"Shaders recarregados!\n");
-        fflush(stdout);
+        if (action == GLFW_PRESS)
+            tecla_W_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_W_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
     }
+    if (key == GLFW_KEY_D)
+    {
+        if (action == GLFW_PRESS)
+            tecla_D_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_D_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
+    }
+    if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_PRESS)
+            tecla_S_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_S_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
+    }
+
+    if (key == GLFW_KEY_A)
+    {
+        if (action == GLFW_PRESS)
+            tecla_A_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_A_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
+    }
+
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal

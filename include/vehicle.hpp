@@ -3,11 +3,14 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include "sceneObject.hpp"
+#include "entity.hpp"
 
-class Vehicle:SceneObject{
+class Vehicle:Entity{
 
     public:
-        Vehicle(glm::vec4 position);
+        Vehicle(SceneObject object,glm::vec4 initialPosition,
+            GLfloat angleX,GLfloat angleY,GLfloat angleZ,
+            GLfloat sx, GLfloat sy, GLfloat sz );
 
         int move();
 

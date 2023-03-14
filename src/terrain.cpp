@@ -5,7 +5,7 @@
 
 Terrain::Terrain(){;}
 SceneObject Terrain::generateTerrain(VAO vao){
-
+    //AUTORIA DE TERCEIROS,FUNCAO MODIFICADA
     int count = VERTEX * VERTEX;
     std::vector<float> vertices (count*4,0.0f) ;
     std::vector<float>  normals(count*4,0.0f);

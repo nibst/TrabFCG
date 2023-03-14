@@ -67,6 +67,7 @@ void main()
     // Coordenadas de textura U e V
     float U = 0.0;
     float V = 0.0;
+    vec3 Kd0;
 
     if ( object_id == SPHERE )
     {
@@ -110,16 +111,18 @@ void main()
 
         U = 0.0;
         V = 0.0;
+        Kd0 =texture(TextureImage1, texcoords).rgb;
     }
     else if ( object_id == PLANE )
     {
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
         V = texcoords.y;
+        Kd0 = texture(TextureImage0, texcoords).rgb;
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    vec3 Kd0 = texture(TextureImage0, texcoords).rgb;
+    
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
