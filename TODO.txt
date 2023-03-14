@@ -1,0 +1,3 @@
+[1]Refatorar bastante
+[2]Deixei uma classe objectTexture.hpp que nao mexi ainda, mas ela vai servir para coisas de textura do objeto eventualmente
+[3]Pensando em tirar aqueles bounding box do professor, os video que vi nao usavam e fica mais facil kkkk
