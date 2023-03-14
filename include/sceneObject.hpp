@@ -7,7 +7,7 @@
 #include <tiny_obj_loader.h>
 #include <stb_image.h>
 #include "matrices.h"
-
+#include "VAO.hpp"
 #include <stdexcept>
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -70,13 +70,13 @@ class SceneObject{
     public:
         SceneObject();
         SceneObject(std::string name,size_t first_index,size_t num_indices,
-                    GLenum rendering_mode,GLuint vaoID,glm::vec3 bbox_min,glm::vec3 bbox_max,GLint id = 0);
+                    GLenum rendering_mode,VAO vao,glm::vec3 bbox_min,glm::vec3 bbox_max,GLint id = 0);
         void setObjectID(GLint id);
         std::string getName();
         size_t getFirstIndex();
         size_t getNumIndices();
         GLenum getRenderingMode();
-        GLuint getVaoID();
+        VAO getVAO();
         glm::vec3 getBboxMin();
         glm::vec3 getBboxMax();
         GLint getID();
@@ -91,7 +91,7 @@ class SceneObject{
         size_t       first_index; // Índice do primeiro vértice dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
         size_t       num_indices; // Número de índices do objeto dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
         GLenum       rendering_mode; // Modo de rasterização (GL_TRIANGLES, GL_TRIANGLE_STRIP, etc.)
-        GLuint       vaoID; // ID do VAO onde estão armazenados os atributos do modelo
+        VAO          vao; // ID do VAO onde estão armazenados os atributos do modelo
         glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
         glm::vec3    bbox_max;
         GLint id;

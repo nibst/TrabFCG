@@ -29,7 +29,7 @@ Renderer::Renderer(){
 }
 void Renderer::render(SceneObject object,glm::mat4 model){
 
-    glBindVertexArray(object.getVaoID());
+    glBindVertexArray(object.getVAO().getID());
 
     // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader
     // com os parâmetros da axis-aligned bounding box (AABB) do modelo.

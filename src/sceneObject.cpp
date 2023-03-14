@@ -7,15 +7,15 @@ std::string SceneObject::getName(){return this->name;}
 size_t SceneObject::getFirstIndex(){return this->first_index;}
 size_t SceneObject::getNumIndices(){return this->num_indices;}
 GLenum SceneObject::getRenderingMode(){return this->rendering_mode;}
-GLuint SceneObject::getVaoID(){return this->vaoID;}
+VAO SceneObject::getVAO(){return this->vao;}
 glm::vec3 SceneObject::getBboxMin(){return this->bbox_min;}
 glm::vec3 SceneObject::getBboxMax(){return this->bbox_max;}
 
 SceneObject::SceneObject(){;}
 SceneObject::SceneObject(std::string name,size_t first_index,size_t num_indices,
-            GLenum rendering_mode,GLuint vaoID,glm::vec3 bbox_min,glm::vec3 bbox_max,GLint id):
+            GLenum rendering_mode,VAO vao,glm::vec3 bbox_min,glm::vec3 bbox_max,GLint id):
             name(name),first_index(first_index),num_indices(num_indices),rendering_mode(rendering_mode),
-            vaoID(vaoID),bbox_min(bbox_min),bbox_max(bbox_max),id(id){;}
+            vao(vao),bbox_min(bbox_min),bbox_max(bbox_max),id(id){;}
 
 void SceneObject::setObjectID(GLint id){
     this->id = id;
@@ -88,9 +88,6 @@ void SceneObject::computeNormals(ObjModel* model)
 // Constrói triângulos para futura renderização a partir de um ObjModel.
 void SceneObject::buildTriangles(ObjModel* model)
 {
-    GLuint vertex_array_object_id;
-    glGenVertexArrays(1, &vertex_array_object_id);
-    glBindVertexArray(vertex_array_object_id);
 
     std::vector<GLuint> indices;
     std::vector<float>  model_coefficients;
@@ -157,70 +154,15 @@ void SceneObject::buildTriangles(ObjModel* model)
                 }
             }
         }
-
+        this->vao.loadToVAO(model_coefficients,texture_coefficients,normal_coefficients,indices);
         size_t last_index = indices.size() - 1;
         this->name           = model->shapes[shape].name;
         this->first_index    = first_index; // Primeiro índice
         this->num_indices    = last_index - first_index + 1; // Número de indices
         this->rendering_mode = GL_TRIANGLES;       // Índices correspondem ao tipo de rasterização GL_TRIANGLES.
-        this->vaoID = vertex_array_object_id;
-
         this->bbox_min = bbox_min;
         this->bbox_max = bbox_max;
     }
-
-    GLuint VBO_model_coefficients_id;
-    glGenBuffers(1, &VBO_model_coefficients_id);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
-    glBufferData(GL_ARRAY_BUFFER, model_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, model_coefficients.size() * sizeof(float), model_coefficients.data());
-    GLuint location = 0; // "(location = 0)" em "shader_vertex.glsl"
-    GLint  number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
-    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(location);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    if ( !normal_coefficients.empty() )
-    {
-        GLuint VBO_normal_coefficients_id;
-        glGenBuffers(1, &VBO_normal_coefficients_id);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_normal_coefficients_id);
-        glBufferData(GL_ARRAY_BUFFER, normal_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, normal_coefficients.size() * sizeof(float), normal_coefficients.data());
-        location = 1; // "(location = 1)" em "shader_vertex.glsl"
-        number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
-        glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(location);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    if ( !texture_coefficients.empty() )
-    {
-        GLuint VBO_texture_coefficients_id;
-        glGenBuffers(1, &VBO_texture_coefficients_id);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_texture_coefficients_id);
-        glBufferData(GL_ARRAY_BUFFER, texture_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, texture_coefficients.size() * sizeof(float), texture_coefficients.data());
-        location = 2; // "(location = 1)" em "shader_vertex.glsl"
-        number_of_dimensions = 2; // vec2 em "shader_vertex.glsl"
-        glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(location);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    GLuint indices_id;
-    glGenBuffers(1, &indices_id);
-
-    // "Ligamos" o buffer. Note que o tipo agora é GL_ELEMENT_ARRAY_BUFFER.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(GLuint), indices.data());
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // XXX Errado!
-    //
-
-    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
-    // alterar o mesmo. Isso evita bugs.
-    glBindVertexArray(0);
 }
 
 
