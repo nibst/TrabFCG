@@ -51,6 +51,7 @@
 #include "windowManager.hpp"
 #include "sceneObject.hpp"
 #include "renderer.hpp"
+#include "terrain.hpp"
 
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
@@ -187,12 +188,19 @@ int main(int argc, char* argv[])
     Renderer renderer = Renderer();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
+    LoadTextureImage("../../data/grass.jpeg");      // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     #define SPHERE 0
     #define BUNNY  1
     #define PLANE  2
+    #define TERRAIN 3 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
+    Terrain terrain = Terrain();
+    VAO terrainVao = VAO();
+    SceneObject terrainmodel;
+    terrainmodel = terrain.generateTerrain(terrainVao);
+    terrainmodel.setObjectID(TERRAIN);
+
     SceneObject spheremodel;
     spheremodel.loadFromOBJFileName("../../data/kart.obj");
     spheremodel.setObjectID(SPHERE);
@@ -264,7 +272,7 @@ int main(int argc, char* argv[])
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -309,8 +317,11 @@ int main(int argc, char* argv[])
         renderer.render(bunnymodel,model);
 
         // Desenhamos o plano do chão
+        //model = Matrix_Translate(0.0f,-1.1f,0.0f);
+        //renderer.render(planemodel,model);
+        
         model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        renderer.render(planemodel,model);
+        renderer.render(terrainmodel,model);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -360,8 +371,8 @@ void LoadTextureImage(const char* filename)
     glGenSamplers(1, &sampler_id);
 
     // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     // Parâmetros de amostragem da textura.
     glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -381,7 +392,7 @@ void LoadTextureImage(const char* filename)
     glBindSampler(textureunit, sampler_id);
 
     stbi_image_free(data);
-
+    
     g_NumLoadedTextures += 1;
 }
 
@@ -474,9 +485,8 @@ void ComputeNormals(ObjModel* model)
 // Constrói triângulos para futura renderização a partir de um ObjModel.
 void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
 {
-    GLuint vertex_array_object_id;
-    glGenVertexArrays(1, &vertex_array_object_id);
-    glBindVertexArray(vertex_array_object_id);
+    VAO *vao = new VAO();
+    vao->bind();
 
     std::vector<GLuint> indices;
     std::vector<float>  model_coefficients;
@@ -545,9 +555,9 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
         }
 
         size_t last_index = indices.size() - 1;
-    
+
         SceneObject theobject;
-        theobject = SceneObject(model->shapes[shape].name,first_index,last_index - first_index + 1,GL_TRIANGLES,vertex_array_object_id,bbox_min,bbox_max);
+        theobject = SceneObject(model->shapes[shape].name,first_index,last_index - first_index + 1,GL_TRIANGLES,*vao,bbox_min,bbox_max);
 
         g_VirtualScene[model->shapes[shape].name] = theobject;
     }
@@ -603,7 +613,7 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
 
     // "Desligamos" o VAO, evitando assim que operações posteriores venham a
     // alterar o mesmo. Isso evita bugs.
-    glBindVertexArray(0);
+    vao->unbind();
 }
 
 // Carrega um Vertex Shader de um arquivo GLSL. Veja definição de LoadShader() abaixo.
