@@ -1,10 +1,10 @@
 #include "terrain.hpp"
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include <glm/vec3.hpp>
 #include <iostream>
 
 Terrain::Terrain(){;}
-SceneObject Terrain::generateTerrain(VAO vao){
+Model Terrain::generateTerrain(VAO vao){
     //AUTORIA DE TERCEIROS,FUNCAO MODIFICADA
     int count = VERTEX * VERTEX;
     std::vector<float> vertices (count*4,0.0f) ;
@@ -48,6 +48,6 @@ SceneObject Terrain::generateTerrain(VAO vao){
     std::cout<< vertices.size() << std::endl;
     for(float v: vertices)
         std::cout<<v<<std::endl;
-    SceneObject object = SceneObject("terrain",0,indices.size(),GL_TRIANGLES,vao,bbox_min,bbox_max);
+    Model object = Model("terrain",0,indices.size(),GL_TRIANGLES,vao,bbox_min,bbox_max);
     return object;
 }

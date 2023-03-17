@@ -1,6 +1,6 @@
 
 #include "entity.hpp"
-Entity::Entity(SceneObject object){
+Entity::Entity(Model object){
     this->object = object;
     this->position = glm::vec4(5.0f,-1.0f,5.0f,1.0f);
     this->angleX = 0.0f;
@@ -11,7 +11,7 @@ Entity::Entity(SceneObject object){
     this->scaleZ = 1.0f;
 }
 Entity::Entity(
-            SceneObject object,glm::vec4 initialPosition,
+            Model object,glm::vec4 initialPosition,
             GLfloat angleX,GLfloat angleY,GLfloat angleZ,
             float sx, float sy, float sz 
         )
@@ -41,7 +41,7 @@ void Entity::scale(GLfloat sx,GLfloat sy, GLfloat sz){
     this->scaleY += sy;
     this->scaleZ += sz;
 }
-SceneObject Entity::getObject(){
+Model Entity::getObject(){
     return this->object;
 }
 glm::mat4 Entity::getTransformationMatrix(){

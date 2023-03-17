@@ -1,14 +1,14 @@
 #pragma once
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include "VAO.hpp"
 
 class Terrain{
 
     public:
         Terrain();
-        SceneObject generateTerrain(VAO vao);
+        Model generateTerrain(VAO vao);
     private:
-        SceneObject object;
+        Model object;
         const int SIZE = 256;
         const int VERTEX = 64;
 };

@@ -2,13 +2,13 @@
 // Headers da biblioteca GLM: criação de matrizes e vetores.
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include "entity.hpp"
 
 class Vehicle:Entity{
 
     public:
-        Vehicle(SceneObject object,glm::vec4 initialPosition,
+        Vehicle(Model object,glm::vec4 initialPosition,
             GLfloat angleX,GLfloat angleY,GLfloat angleZ,
             GLfloat sx, GLfloat sy, GLfloat sz );
 

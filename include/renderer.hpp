@@ -1,12 +1,12 @@
 #pragma once
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat4x4.hpp>
 
 class Renderer{
     public:
         Renderer();
-        void render(SceneObject object,glm::mat4 model);
+        void render(Model object,glm::mat4 model);
         GLuint g_GpuProgramID = 0;
         GLint g_model_uniform;
         GLint g_view_uniform;

@@ -49,7 +49,7 @@
 #include "utils.h"
 #include "matrices.h"
 #include "windowManager.hpp"
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include "renderer.hpp"
 #include "terrain.hpp"
 #include "entity.hpp"
@@ -108,7 +108,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 // (map).  Veja dentro da função BuildTrianglesAndAddToVirtualScene() como que são incluídos
 // objetos dentro da variável g_VirtualScene, e veja na função main() como
 // estes são acessados.
-std::map<std::string, SceneObject> g_VirtualScene;
+std::map<std::string, Model> g_VirtualScene;
 
 // Pilha que guardará as matrizes de modelagem.
 std::stack<glm::mat4>  g_MatrixStack;
@@ -197,12 +197,12 @@ int main(int argc, char* argv[])
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     Terrain terrain = Terrain();
     VAO terrainVao = VAO();
-    SceneObject terrainmodel;
+    Model terrainmodel;
     terrainmodel = terrain.generateTerrain(terrainVao);
     terrainmodel.setObjectID(PLANE);
 
 
-    SceneObject bunnymodel;
+    Model bunnymodel;
     bunnymodel.loadFromOBJFileName("../../data/GoKart.obj");
     bunnymodel.setObjectID(BUNNY);
     Entity instanceOfBunny = Entity(bunnymodel);//default values of Entity()
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
     float prev_time = (float)glfwGetTime();
-    float speed = 5.5f;
+    float speed = 12.5f;
     glm::vec4 camera_position_c  = glm::vec4(2.0f,3.0f,2.0f,1.0f); // Ponto "c", centro da câmera
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
@@ -587,8 +587,8 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel* model)
 
         size_t last_index = indices.size() - 1;
 
-        SceneObject theobject;
-        theobject = SceneObject(model->shapes[shape].name,first_index,last_index - first_index + 1,GL_TRIANGLES,*vao,bbox_min,bbox_max);
+        Model theobject;
+        theobject = Model(model->shapes[shape].name,first_index,last_index - first_index + 1,GL_TRIANGLES,*vao,bbox_min,bbox_max);
 
         g_VirtualScene[model->shapes[shape].name] = theobject;
     }

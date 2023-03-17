@@ -27,7 +27,7 @@ Renderer::Renderer(){
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 }
-void Renderer::render(SceneObject object,glm::mat4 model){
+void Renderer::render(Model object,glm::mat4 model){
 
     glBindVertexArray(object.getVAO().getID());
 

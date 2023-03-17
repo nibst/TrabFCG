@@ -1,23 +1,23 @@
 
 #pragma once
-#include "sceneObject.hpp"
+#include "model.hpp"
 #include "matrices.h"
 class Entity{
     public:
-        Entity(SceneObject object);
+        Entity(Model object);
         //sx,sy,sz = scale 
         Entity(
-            SceneObject object,glm::vec4 initialPosition,
+            Model object,glm::vec4 initialPosition,
             GLfloat angleX,GLfloat angleY,GLfloat angleZ,
             GLfloat sx, GLfloat sy, GLfloat sz 
         );
         void increasePosition(GLfloat x, GLfloat y, GLfloat z);
         void rotate(GLfloat angleX,GLfloat angleY,GLfloat angleZ);
         void scale(GLfloat sx,GLfloat sy, GLfloat sz);
-        SceneObject getObject();
+        Model getObject();
         glm::mat4 getTransformationMatrix();
     protected:
-        SceneObject object;
+        Model object;
         glm::vec4 position;
         GLfloat angleX;
         GLfloat angleY;
