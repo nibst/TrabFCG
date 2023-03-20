@@ -5,11 +5,16 @@
 #include "model.hpp"
 #include "entity.hpp"
 #define DEFAULT_FRONT_VECTOR glm::vec4(0.85,0.0,0.5,0.0)
-#define DEFAULT_VEHICLE_ACCELERATION 10.0
+#define DEFAULT_VEHICLE_ACCELERATION 5.0
+#define DEFAULT_VELOCITY_VECTOR glm::vec4(0.0,0.0,0.0,0.0)
+
+
 enum CarGear{
-    normal,
+    rest,
+    forward,
     reverse
 };
+#define DEFAULT_GEAR CarGear::rest
 class Vehicle: public Entity{
 
     public:
@@ -19,11 +24,14 @@ class Vehicle: public Entity{
             GLfloat angleX,GLfloat angleY,GLfloat angleZ,
             GLfloat sx, GLfloat sy, GLfloat sz );
 
-        int move(CarGear gear);
+        int move(float delta_time);
+        void setGear(CarGear gear);
 
     private:
         float acceleration;
+        glm::vec4 velocityVector;
         glm::vec4 vehiclePosition;
         glm::vec4 resultantForce;
         glm::vec4 frontVector;
+        CarGear gear;
 };

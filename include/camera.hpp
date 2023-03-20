@@ -2,7 +2,7 @@
 #include "matrices.h"
 #define DEFAULT_POS glm::vec4(2.0f,3.0f,2.0f,1.0f)
 #define DEFAULT_VIEW glm::vec4(0.0f,0.0f,3.5f,0.0f)
-#define DEFAULT_PHI 0.0f
+#define DEFAULT_PHI 1.0f
 #define DEFAULT_THETA 0.0f
 #define DEFAULT_NEAR -0.1f
 #define DEFAULT_FAR -100.f

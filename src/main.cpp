@@ -131,7 +131,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
 float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
+float g_CameraPhi = 1.0f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
     Model kartmodel;
     kartmodel.loadFromOBJFileName("../../data/GoKart.obj");
     kartmodel.setObjectID(KART);
-    Entity kart = Vehicle(kartmodel);//default values of Entity()
+    Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera*) new LookAtCamera(&kart);
 
 
@@ -263,34 +263,39 @@ int main(int argc, char* argv[])
         // Realiza movimentação de objetos
         if (tecla_D_pressionada){
             // Movimenta câmera para direita
-            v = (u * camera->speed * delta_t);
-            kart.increasePosition(v.x,v.y,v.z);
+            //v = (u * camera->speed * delta_t);
+            //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveRight(delta_t);
         }
 
         // Realiza movimentação de objetos
         if (tecla_S_pressionada){
             // Movimenta câmera para tras
-            v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
-            kart.increasePosition(v.x,v.y,v.z);
+            //v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+            kart.setGear(CarGear::reverse);
+            //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveBackward(delta_t);
         }
 
         // Realiza movimentação de objetos
         if (tecla_A_pressionada){
             // Movimenta câmera para esquerda
-            v =((-u) * camera->speed * delta_t);
-            kart.increasePosition(v.x,v.y,v.z);
+            //v =((-u) * camera->speed * delta_t);
+            //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveLeft(delta_t);
+            kart.setGear(CarGear::rest);
+
         }
 
         // Realiza movimentação de objetos
         if (tecla_W_pressionada){
             // Movimenta câmera para frente
-            v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
-            kart.increasePosition(v.x,v.y,v.z);
+            //v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+            kart.setGear(CarGear::forward);
+            //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveFoward(delta_t);
         }
+        kart.move(delta_t);
         camera->rotate(g_CameraPhi,g_CameraTheta);
         camera->move();
         float lineheight = TextRendering_LineHeight(window);
