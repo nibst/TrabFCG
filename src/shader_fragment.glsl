@@ -118,7 +118,7 @@ void main()
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage0, texcoords).rgb;
+        Kd0 = texture(TextureImage0, texcoords*80).rgb;
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0

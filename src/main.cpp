@@ -53,7 +53,9 @@
 #include "renderer.hpp"
 #include "terrain.hpp"
 #include "entity.hpp"
-
+#include "camera.hpp"
+#include "vehicle.hpp"
+#include "lookAtCamera.hpp"
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
@@ -113,9 +115,6 @@ std::map<std::string, Model> g_VirtualScene;
 // Pilha que guardará as matrizes de modelagem.
 std::stack<glm::mat4>  g_MatrixStack;
 
-// Razão de proporção da janela (largura/altura). Veja função FramebufferSizeCallback().
-float g_ScreenRatio = 1.0f;
-
 // Ângulos de Euler que controlam a rotação de um dos cubos da cena virtual
 float g_AngleX = 0.0f;
 float g_AngleY = 0.0f;
@@ -152,7 +151,7 @@ bool g_ShowInfoText = true;
 bool tecla_A_pressionada = false,tecla_D_pressionada = false,tecla_S_pressionada = false,tecla_W_pressionada=false; 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
-
+Camera *camera = new Camera();
 int main(int argc, char* argv[])
 {
 
@@ -192,7 +191,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/grass.jpeg");      // TextureImage0
     LoadTextureImage("../../data/textures/GoKart_[Albedo].tga.png"); // TextureImage1
     #define SPHERE 0
-    #define BUNNY  1
+    #define KART  1
     #define PLANE  2
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     Terrain terrain = Terrain();
@@ -202,11 +201,11 @@ int main(int argc, char* argv[])
     terrainmodel.setObjectID(PLANE);
 
 
-    Model bunnymodel;
-    bunnymodel.loadFromOBJFileName("../../data/GoKart.obj");
-    bunnymodel.setObjectID(BUNNY);
-    Entity instanceOfBunny = Entity(bunnymodel);//default values of Entity()
-
+    Model kartmodel;
+    kartmodel.loadFromOBJFileName("../../data/GoKart.obj");
+    kartmodel.setObjectID(KART);
+    Entity kart = Vehicle(kartmodel);//default values of Entity()
+    camera = (LookAtCamera*) new LookAtCamera(&kart);
 
 
 
@@ -219,8 +218,6 @@ int main(int argc, char* argv[])
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
     float prev_time = (float)glfwGetTime();
-    float speed = 12.5f;
-    glm::vec4 camera_position_c  = glm::vec4(2.0f,3.0f,2.0f,1.0f); // Ponto "c", centro da câmera
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!(windowManager->shouldCloseWindow()))
@@ -246,26 +243,19 @@ int main(int argc, char* argv[])
         // os shaders de vértice e fragmentos).
         glUseProgram(renderer.g_GpuProgramID);
 
-        // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-        // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-        // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-        // e ScrollCallback().
-        float r = g_CameraDistance;
-        float y = r*sin(g_CameraPhi);
-        float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-        float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         //glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = glm::vec4(x,-y,z,0.0f);  // Vetor "view", sentido para onde a câmera está virada
+        glm::vec4 camera_view_vector = camera->getViewVector();
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
         
         glm::vec4 w = -camera_view_vector;
         glm::vec4 u = crossproduct(camera_up_vector,w);
         w = w / norm(w);
         u = u / norm(u);
-
+        
         float current_time = (float)glfwGetTime();
         float delta_t = current_time - prev_time;
         prev_time = current_time;
@@ -273,68 +263,48 @@ int main(int argc, char* argv[])
         // Realiza movimentação de objetos
         if (tecla_D_pressionada){
             // Movimenta câmera para direita
-            v = (u * speed * delta_t);
-            instanceOfBunny.increasePosition(v.x,v.y,v.z);
-            camera_position_c += u * speed * delta_t;
+            v = (u * camera->speed * delta_t);
+            kart.increasePosition(v.x,v.y,v.z);
+            //camera->moveRight(delta_t);
         }
 
         // Realiza movimentação de objetos
         if (tecla_S_pressionada){
             // Movimenta câmera para tras
-            v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t);
-            instanceOfBunny.increasePosition(v.x,v.y,v.z);
-            camera_position_c += (glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t;
+            v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+            kart.increasePosition(v.x,v.y,v.z);
+            //camera->moveBackward(delta_t);
         }
 
         // Realiza movimentação de objetos
         if (tecla_A_pressionada){
             // Movimenta câmera para esquerda
-            v =((-u) * speed * delta_t);
-            instanceOfBunny.increasePosition(v.x,v.y,v.z);
-            camera_position_c += (-u) * speed * delta_t;
+            v =((-u) * camera->speed * delta_t);
+            kart.increasePosition(v.x,v.y,v.z);
+            //camera->moveLeft(delta_t);
         }
 
         // Realiza movimentação de objetos
         if (tecla_W_pressionada){
             // Movimenta câmera para frente
-            v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t);
-            camera_position_c += -(glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_t;
-
-            instanceOfBunny.increasePosition(v.x,v.y,v.z);
+            v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+            kart.increasePosition(v.x,v.y,v.z);
+            //camera->moveFoward(delta_t);
         }
+        camera->rotate(g_CameraPhi,g_CameraTheta);
+        camera->move();
+        float lineheight = TextRendering_LineHeight(window);
+        float charwidth = TextRendering_CharWidth(window);
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        glm::mat4 view = camera->getViewMatrix();
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
 
-        // Note que, no sistema de coordenadas da câmera, os planos near e far
-        // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -100.0f; // Posição do "far plane"
-
-        if (g_UsePerspectiveProjection)
-        {
-            // Projeção Perspectiva.
-            // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
-            float field_of_view = 3.141592 / 3.0f;
-            projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
-        }
-        else
-        {
-            // Projeção Ortográfica.
-            // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
-            // PARA PROJEÇÃO ORTOGRÁFICA veja slides 219-224 do documento Aula_09_Projecoes.pdf.
-            // Para simular um "zoom" ortográfico, computamos o valor de "t"
-            // utilizando a variável g_CameraDistance.
-            float t = 1.5f*g_CameraDistance/2.5f;
-            float b = -t;
-            float r = t*g_ScreenRatio;
-            float l = -r;
-            projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
-        }
+        projection = camera->getPerspectiveMatrix();
+        
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
@@ -345,7 +315,7 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(renderer.g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         // Desenhamos o modelo do coelho;
-        renderer.render(instanceOfBunny.getObject(),instanceOfBunny.getTransformationMatrix());
+        renderer.render(kart.getObject(),kart.getTransformationMatrix());
 
         // Desenhamos o plano do chão
         //model = Matrix_Translate(0.0f,-1.1f,0.0f);
@@ -353,6 +323,7 @@ int main(int argc, char* argv[])
         
         model = Matrix_Translate(0.0f,-1.1f,0.0f);
         renderer.render(terrainmodel,model);
+        TextRendering_PrintVector(window, camera->getViewVector(), 1.0f-(8 + 1)*charwidth, 1.0f-lineheight, 1.0f);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -363,11 +334,12 @@ int main(int argc, char* argv[])
 
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
-        TextRendering_ShowFramesPerSecond(window);
+        //TextRendering_ShowFramesPerSecond(window);
 
         windowManager->updateWindow();
-    }
 
+    }
+    free(camera);
     // Finalizamos o uso dos recursos do sistema operacional
     glfwTerminate();
 
@@ -814,7 +786,7 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
     //
     // O cast para float é necessário pois números inteiros são arredondados ao
     // serem divididos!
-    g_ScreenRatio = (float)width / height;
+    camera->setScreenRatio((float)width / height);
 }
 
 // Variáveis globais que armazenam a última posição do cursor do mouse, para
@@ -904,7 +876,6 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     
         if (g_CameraPhi < phimin)
             g_CameraPhi = phimin;
-    
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
@@ -947,18 +918,8 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // Atualizamos a distância da câmera para a origem utilizando a
-    // movimentação da "rodinha", simulando um ZOOM.
-    g_CameraDistance -= 0.1f*yoffset;
+    camera->calculateZoom(yoffset);
 
-    // Uma câmera look-at nunca pode estar exatamente "em cima" do ponto para
-    // onde ela está olhando, pois isto gera problemas de divisão por zero na
-    // definição do sistema de coordenadas da câmera. Isto é, a variável abaixo
-    // nunca pode ser zero. Versões anteriores deste código possuíam este bug,
-    // o qual foi detectado pelo aluno Vinicius Fraga (2017/2).
-    const float verysmallnumber = std::numeric_limits<float>::epsilon();
-    if (g_CameraDistance < verysmallnumber)
-        g_CameraDistance = verysmallnumber;
 }
 
 // Definição da função que será chamada sempre que o usuário pressionar alguma

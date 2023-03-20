@@ -55,3 +55,19 @@ glm::mat4 Entity::getTransformationMatrix(){
 
 		
 }
+
+glm::vec4 Entity::getPosition(){
+    return this->position;
+}
+
+GLfloat Entity::getAngleX(){
+    return this->angleX;
+}
+
+GLfloat Entity::getAngleY(){
+    return this->angleY;
+}
+
+GLfloat Entity::getAngleZ(){
+    return this->angleZ;
+}

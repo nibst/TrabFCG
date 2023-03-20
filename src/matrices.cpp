@@ -174,12 +174,12 @@ glm::mat4 Matrix_Rotate(float angle, glm::vec4 axis)
 // coordenadas ortonormal.
 glm::vec4 crossproduct(glm::vec4 u, glm::vec4 v)
 {
-    float u1 = u.x;
-    float u2 = u.y;
-    float u3 = u.z;
-    float v1 = v.x;
-    float v2 = v.y;
-    float v3 = v.z;
+    double u1 = u.x;
+    double u2 = u.y;
+    double u3 = u.z;
+    double v1 = v.x;
+    double v2 = v.y;
+    double v3 = v.z;
 
     return glm::vec4(
         u2*v3 - u3*v2, // Primeiro coeficiente
@@ -188,7 +188,6 @@ glm::vec4 crossproduct(glm::vec4 u, glm::vec4 v)
         0.0f // w = 0 para vetores.
     );
 }
-
 // Produto escalar entre dois vetores u e v definidos em um sistema de
 // coordenadas ortonormal.
 float dotproduct(glm::vec4 u, glm::vec4 v)
@@ -213,9 +212,15 @@ float dotproduct(glm::vec4 u, glm::vec4 v)
 
 // Matriz de mudança de coordenadas para o sistema de coordenadas da Câmera.
 glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::vec4 up_vector)
-{
+{   
+    
     glm::vec4 w = -view_vector;
     glm::vec4 u = crossproduct(up_vector, w);
+    printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
+
+    printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
+
+    printf("u: %f,%f,%f,%f\n",u.x,u.y,u.z,u.w);
 
     // Normalizamos os vetores u e w
     w = w / norm(w);
@@ -234,7 +239,11 @@ glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::v
     float wx = w.x;
     float wy = w.y;
     float wz = w.z;
-
+    printf("view_vector: %f,%f,%f,%f\n",view_vector.x,view_vector.y,view_vector.z,view_vector.w);
+    printf("position_c: %f,%f,%f,%f\n",position_c.x,position_c.y,position_c.z,position_c.w);
+    printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
+    printf("v: %f,%f,%f,%f\n",v.x,v.y,v.z,v.w);
+    printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
     return Matrix(
         ux   , uy   , uz   , -dotproduct(u , position_c - origin_o) ,
         vx   , vy   , vz   , -dotproduct(v , position_c - origin_o) ,

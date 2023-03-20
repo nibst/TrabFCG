@@ -4,6 +4,7 @@
 #include "matrices.h"
 class Entity{
     public:
+        
         Entity(Model object);
         //sx,sy,sz = scale 
         Entity(
@@ -16,6 +17,10 @@ class Entity{
         void scale(GLfloat sx,GLfloat sy, GLfloat sz);
         Model getObject();
         glm::mat4 getTransformationMatrix();
+        glm::vec4 getPosition();
+        GLfloat getAngleX();
+        GLfloat getAngleY();
+        GLfloat getAngleZ();
     protected:
         Model object;
         glm::vec4 position;

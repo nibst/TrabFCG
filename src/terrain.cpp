@@ -45,9 +45,6 @@ Model Terrain::generateTerrain(VAO vao){
     glm::vec3 bbox_min = glm::vec3(0.0f,0.0f,0.0f);
     glm::vec3 bbox_max = glm::vec3(1.0f,1.0f,1.0f);
     vao.loadToVAO(vertices, textureCoords, normals, indices);
-    std::cout<< vertices.size() << std::endl;
-    for(float v: vertices)
-        std::cout<<v<<std::endl;
     Model object = Model("terrain",0,indices.size(),GL_TRIANGLES,vao,bbox_min,bbox_max);
     return object;
 }
