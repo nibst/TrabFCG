@@ -55,7 +55,6 @@ glm::mat4 Entity::getTransformationMatrix(){
 
 		
 }
-
 glm::vec4 Entity::getPosition(){
     return this->position;
 }
@@ -71,3 +70,4 @@ GLfloat Entity::getAngleY(){
 GLfloat Entity::getAngleZ(){
     return this->angleZ;
 }
+void rotateAroundAxis();

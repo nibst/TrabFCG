@@ -266,6 +266,7 @@ int main(int argc, char* argv[])
             //v = (u * camera->speed * delta_t);
             //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveRight(delta_t);
+            kart.setTurnDirection(Turn::right);
         }
 
         // Realiza movimentação de objetos
@@ -283,7 +284,8 @@ int main(int argc, char* argv[])
             //v =((-u) * camera->speed * delta_t);
             //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveLeft(delta_t);
-            kart.setGear(CarGear::rest);
+            kart.setTurnDirection(Turn::left);
+            //kart.setGear(CarGear::rest);
 
         }
 
@@ -298,6 +300,9 @@ int main(int argc, char* argv[])
         kart.move(delta_t);
         camera->rotate(g_CameraPhi,g_CameraTheta);
         camera->move();
+        kart.setTurnDirection(Turn::straight);
+        kart.setGear(CarGear::rest);
+
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
 
