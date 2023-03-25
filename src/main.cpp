@@ -56,6 +56,7 @@
 #include "camera.hpp"
 #include "vehicle.hpp"
 #include "lookAtCamera.hpp"
+#include "animatedEntity.hpp"
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
@@ -189,7 +190,9 @@ int main(int argc, char* argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/grass.jpeg");      // TextureImage0
-    LoadTextureImage("../../data/textures/GoKart_[Albedo].tga.png"); // TextureImage1
+    LoadTextureImage("../../data/textures/asphalt_road.png"); // TextureImage1
+    LoadTextureImage("../../data/textures/blendMapAmongus.jpg"); // TextureImage2
+    LoadTextureImage("../../data/textures/GoKart_[Albedo].tga.png");//TextureImage3
     #define SPHERE 0
     #define KART  1
     #define PLANE  2
@@ -207,6 +210,7 @@ int main(int argc, char* argv[])
     Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera*) new LookAtCamera(&kart);
 
+    AnimatedEntity testKart = AnimatedEntity(kartmodel); 
 
 
     if ( argc > 1 )
@@ -297,6 +301,7 @@ int main(int argc, char* argv[])
             //kart.increasePosition(v.x,v.y,v.z);
             //camera->moveFoward(delta_t);
         }
+        testKart.move(delta_t);
         kart.move(delta_t);
         camera->rotate(g_CameraPhi,g_CameraTheta);
         camera->move();
@@ -326,6 +331,7 @@ int main(int argc, char* argv[])
 
         // Desenhamos o modelo do coelho;
         renderer.render(kart.getObject(),kart.getTransformationMatrix());
+        renderer.render(testKart.getObject(),testKart.getTransformationMatrix());
 
         // Desenhamos o plano do chão
         //model = Matrix_Translate(0.0f,-1.1f,0.0f);

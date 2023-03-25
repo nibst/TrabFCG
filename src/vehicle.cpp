@@ -28,18 +28,15 @@ int Vehicle::move(float delta_time){
         orientation = -1;
     if (this->gear == CarGear::rest)
         orientation = 0;
-    printf("orientation %f\n",orientation);
+    //printf("orientation %f\n",orientation);
 
-    this->resultantForce = this->frontVector * orientation * this->acceleration;
-    printf("resultantForce %f,%f,%f,%f\n",resultantForce.x,resultantForce.y,resultantForce.z,resultantForce.w);
+    glm::vec4 accelerationVector = this->frontVector * orientation * this->acceleration;
 
     float current_speed = norm(this->velocityVector);
-    printf("current_Speed %f\n",current_speed);
+    //printf("current_Speed %f\n",current_speed);
     if (current_speed < max_speed){
-        this->velocityVector += this->resultantForce * delta_time;
+        this->velocityVector += accelerationVector * delta_time; // v = v0 + a*t
     }
-    printf("FrontVector: %f,%f,%f,%f\n",this->frontVector.x,this->frontVector.y,this->frontVector.z,this->frontVector.w);
-
     this->position += this->velocityVector * delta_time;
 
 } 

@@ -41,7 +41,6 @@ class Vehicle: public Entity{
         float acceleration;
         glm::vec4 frontVector;
         glm::vec4 vehiclePosition;
-        glm::vec4 resultantForce;
         glm::vec4 velocityVector;
         glm::vec4 upVector;
         CarGear gear;
