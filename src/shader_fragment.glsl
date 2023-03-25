@@ -20,7 +20,7 @@ uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
 #define SPHERE 0
-#define BUNNY  1
+#define KART  1
 #define PLANE  2
 uniform int object_id;
 
@@ -32,6 +32,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -47,6 +48,8 @@ void main()
     vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 camera_position = inverse(view) * origin;
 
+    
+    
     // O fragmento atual é coberto por um ponto que percente à superfície de um
     // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
     // sistema de coordenadas global (World coordinates). Esta posição é obtida
@@ -69,56 +72,23 @@ void main()
     float V = 0.0;
     vec3 Kd0;
 
-    if ( object_id == SPHERE )
+    if ( object_id == KART )
     {
-        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
-        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
-        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // A esfera que define a projeção deve estar centrada na posição
-        // "bbox_center" definida abaixo.
-
-        // Você deve utilizar:
-        //   função 'length( )' : comprimento Euclidiano de um vetor
-        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
-        //   função 'asin( )'   : seno inverso.
-        //   constante M_PI
-        //   variável position_model
-
-        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-
-        U = 0.0;
-        V = 0.0;
-    }
-    else if ( object_id == BUNNY )
-    {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
-
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        float minz = bbox_min.z;
-        float maxz = bbox_max.z;
-
-        U = 0.0;
-        V = 0.0;
-        Kd0 =texture(TextureImage1, texcoords).rgb;
+        //use texcoords from obj model
+        Kd0 =texture(TextureImage3, texcoords).rgb;
     }
     else if ( object_id == PLANE )
-    {
-        // Coordenadas de textura do plano, obtidas do arquivo OBJ.
-        U = texcoords.x;
-        V = texcoords.y;
-        Kd0 = texture(TextureImage0, texcoords*80).rgb;
+    {   
+        vec2 tiledCoords = texcoords*50;
+        
+        //colour of blend map on coord texcoords
+        vec4 blendMapColour = texture(TextureImage2,texcoords);
+        
+        //in blendMap the background texture is black colour
+        float backGroundTextureAmount = 1.0 - (blendMapColour.r + blendMapColour.g + blendMapColour.b); 
+        vec4 backGroundTextureColour = texture(TextureImage0,tiledCoords) * backGroundTextureAmount;
+        vec4 blueTextureColour = texture(TextureImage1,tiledCoords) * blendMapColour.b;
+        Kd0 = backGroundTextureColour.rgb + blueTextureColour.rgb;
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0

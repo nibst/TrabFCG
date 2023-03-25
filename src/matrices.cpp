@@ -216,11 +216,11 @@ glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::v
     
     glm::vec4 w = -view_vector;
     glm::vec4 u = crossproduct(up_vector, w);
-    printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
+    //printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
 
-    printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
+    //printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
 
-    printf("u: %f,%f,%f,%f\n",u.x,u.y,u.z,u.w);
+    //printf("u: %f,%f,%f,%f\n",u.x,u.y,u.z,u.w);
 
     // Normalizamos os vetores u e w
     w = w / norm(w);
@@ -239,11 +239,11 @@ glm::mat4 Matrix_Camera_View(glm::vec4 position_c, glm::vec4 view_vector, glm::v
     float wx = w.x;
     float wy = w.y;
     float wz = w.z;
-    printf("view_vector: %f,%f,%f,%f\n",view_vector.x,view_vector.y,view_vector.z,view_vector.w);
-    printf("position_c: %f,%f,%f,%f\n",position_c.x,position_c.y,position_c.z,position_c.w);
-    printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
-    printf("v: %f,%f,%f,%f\n",v.x,v.y,v.z,v.w);
-    printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
+    //printf("view_vector: %f,%f,%f,%f\n",view_vector.x,view_vector.y,view_vector.z,view_vector.w);
+    //printf("position_c: %f,%f,%f,%f\n",position_c.x,position_c.y,position_c.z,position_c.w);
+    //printf("up_vector: %f,%f,%f,%f\n",up_vector.x,up_vector.y,up_vector.z,up_vector.w);
+    //printf("v: %f,%f,%f,%f\n",v.x,v.y,v.z,v.w);
+    //printf("w: %f,%f,%f,%f\n",w.x,w.y,w.z,w.w);
     return Matrix(
         ux   , uy   , uz   , -dotproduct(u , position_c - origin_o) ,
         vx   , vy   , vz   , -dotproduct(v , position_c - origin_o) ,
