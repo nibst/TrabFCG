@@ -2,5 +2,5 @@
 #include "entity.hpp"
 namespace Collisions
 {
-  bool boundingBoxesCollision(Entity firstObj, Entity secondObj);
+  bool boundingSpheresCollisionTest(glm::vec4 firstObjPosition, float firstObjRadius, glm::vec4 secondObjPosition, float secondObjRadius);
 }

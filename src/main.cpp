@@ -39,6 +39,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 // Headers da biblioteca para carregar modelos obj
 #include <tiny_obj_loader.h>
@@ -104,10 +105,8 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
-
-
-void writeEntities(std::ostream& os, const std::vector<SerializedEntity> &vec);
-std::vector<SerializedEntity> readEntities(std::istream& inputStream);
+void writeEntities(std::ostream &os, const std::vector<SerializedEntity> &vec);
+std::vector<SerializedEntity> readEntities(std::istream &inputStream);
 
 Entity buildVisualizationOfBbox(Entity entity);
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -155,7 +154,7 @@ bool g_UsePerspectiveProjection = true;
 bool g_ShowInfoText = true;
 
 bool tecla_A_pressionada = false, tecla_D_pressionada = false, tecla_S_pressionada = false,
-tecla_W_pressionada = false, tecla_space_pressionada = false,tecla_J_pressionada=false;
+     tecla_W_pressionada = false, tecla_space_pressionada = false, tecla_J_pressionada = false;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 Camera *camera = new Camera();
@@ -223,25 +222,26 @@ int main(int argc, char *argv[])
 
     Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera *)new LookAtCamera(&kart);
-    //glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
-    //front = front * 0.2f;
-    //kart.setFrontVector(front);
+    // glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
+    // front = front * 0.2f;
+    // kart.setFrontVector(front);
     AnimatedEntity testKart = AnimatedEntity(kartmodel);
 
     Model wallmodel;
     wallmodel.loadFromOBJFileName("../../data/wall.obj");
     wallmodel.setObjectID(OUTERWALL);
     models[OUTERWALL] = wallmodel;
-    models[INNERWALL] = wallmodel; //usado na hora do load do arquivo binario com as paredes
+    models[INNERWALL] = wallmodel; // usado na hora do load do arquivo binario com as paredes
 
     std::vector<Entity> walls;
     std::ifstream in("../../wallMap.bin", std::ios::in | std::ios::binary);
     std::vector<SerializedEntity> allSerialized = readEntities(in);
     in.close();
 
-    for (SerializedEntity serialized : allSerialized){
-        Entity entity = Entity(serialized,models);
-        //printf("%d\n",entity.getObject().getID());
+    for (SerializedEntity serialized : allSerialized)
+    {
+        Entity entity = Entity(serialized, models);
+        // printf("%d\n",entity.getObject().getID());
         walls.push_back(entity);
     }
 
@@ -347,16 +347,17 @@ int main(int argc, char *argv[])
                 walls.pop_back();
             tecla_J_pressionada = false;
         }
-        
-        */
-        for (Entity wall : walls){
-            if(Collisions::boundingBoxesCollision(wall,kart))
-                kart.hitObject();
-        }
-        // testKart.move(delta_t);
-        kart.move(delta_t);
 
-        // std::cout << Collisions::boundingBoxesCollision(kart.getPosition(), kart.getObject().getBboxMin(), kart.getObject().getBboxMax(), testKart.getPosition(), testKart.getObject().getBboxMin(), testKart.getObject().getBboxMax()) << std::endl;
+        */
+        // for (Entity wall : walls)
+        // {
+        //     if (Collisions::boundingSpheresCollisionTest(wall, 2.0f, kart, 2.0f))
+        // }
+        if (Collisions::boundingSpheresCollisionTest(testKart.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+            kart.hitObject();
+
+        testKart.move(delta_t);
+        kart.move(delta_t);
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
@@ -413,7 +414,7 @@ int main(int argc, char *argv[])
         windowManager->updateWindow();
     }
     /* for making map walls
-    
+
     std::vector<SerializedEntity> allSerializedWalls;
     for(Entity wall: walls){
         SerializedEntity* serializedWall = wall.serialize();
@@ -962,10 +963,10 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
 
         if (g_CameraPhi < phimin)
             g_CameraPhi = phimin;
-        //para nao flipar a camera
-        if (g_CameraPhi >= -0.1 && g_CameraPhi<0.0)
+        // para nao flipar a camera
+        if (g_CameraPhi >= -0.1 && g_CameraPhi < 0.0)
             g_CameraPhi = -0.1;
-        if (g_CameraPhi <= 0.1 && g_CameraPhi>0.0)
+        if (g_CameraPhi <= 0.1 && g_CameraPhi > 0.0)
             g_CameraPhi = 0.1;
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
@@ -1460,21 +1461,22 @@ void PrintObjModelInfo(ObjModel *model)
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
 
-void writeEntities(std::ostream& outputStream, const std::vector<SerializedEntity> &vec)
+void writeEntities(std::ostream &outputStream, const std::vector<SerializedEntity> &vec)
 {
     typename std::vector<SerializedEntity>::size_type size = vec.size();
-    outputStream.write((char*)&size, sizeof(size));
-    outputStream.write((char*)&vec[0], vec.size() * sizeof(SerializedEntity));
+    outputStream.write((char *)&size, sizeof(size));
+    outputStream.write((char *)&vec[0], vec.size() * sizeof(SerializedEntity));
 }
-std::vector<SerializedEntity> readEntities(std::istream& inputStream){
-    
+std::vector<SerializedEntity> readEntities(std::istream &inputStream)
+{
+
     typename std::vector<SerializedEntity>::size_type size = 0;
-    inputStream.read((char*)&size, sizeof(size));
+    inputStream.read((char *)&size, sizeof(size));
     std::vector<SerializedEntity> allSerialized;
     allSerialized.resize(size);
-    inputStream.read((char*)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
+    inputStream.read((char *)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
     return allSerialized;
 }
-Entity buildVisualizationOfBbox(Entity entity){
-    
+Entity buildVisualizationOfBbox(Entity entity)
+{
 }
