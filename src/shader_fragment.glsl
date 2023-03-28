@@ -59,8 +59,8 @@ void main()
     vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 camera_position = inverse(view) * origin;
 
-    
-    
+
+
     // O fragmento atual é coberto por um ponto que percente à superfície de um
     // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
     // sistema de coordenadas global (World coordinates). Esta posição é obtida
@@ -73,10 +73,18 @@ void main()
     vec4 n = normalize(normal);
 
     // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
-    vec4 l = normalize(vec4(1.0,1.0,0.0,0.0));
+    vec4 l = normalize(vec4(1.0,1.0,0.5,0.0));
 
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
+
+    // Vetor que define o sentido da reflexão especular ideal.
+    vec4 r = -l + 2 * n * dot(n,l);
+
+    // Parâmetros que definem as propriedades espectrais da superfície
+    vec3 Ks; // Refletância especular
+    vec3 Ka; // Refletância ambiente
+    float q; // Expoente especular para o modelo de iluminação de Phong
 
     // Coordenadas de textura U e V
     float U = 0.0;
@@ -85,6 +93,9 @@ void main()
 
     if ( object_id == KART )
     {
+        Ks = vec3(0.1,0.1,0.7);
+        Ka = vec3(0.01,0.1,0.4);
+        q = 2.0;
         //use texcoords from obj model
         Kd0 =texture(TextureImage3, texcoords).rgb;
     }
@@ -92,13 +103,22 @@ void main()
 
         //Computa a cor da textura neste ponto
         Kd0 = texture(TextureImage4, texcoords*5).rgb;
+        Ks = vec3(0.3,0.3,0.3);
+        Ka = vec3(0.0,0.0,0.0);
+        q = 20.0;
     }
     else if (object_id == INNERWALL){
         float adjustObjectBrightness = 3.0;
         Kd0 = texture(TextureImage6, texcoords*3).rgb * adjustObjectBrightness;
+        Ks = vec3(0.3,0.3,0.3);
+        Ka = vec3(0.0,0.0,0.0);
+        q = 20.0;
     }
     else if(object_id == COW){
-        
+        Ks = vec3(0.5,0.5,0.5);
+        Ka = vec3(0.2,0.2,0.2);
+        q = 1.0;
+
         vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
         float radius = 3.0;
         vec4 plinha = bbox_center + radius*((position_model - bbox_center)/(length(position_model - bbox_center)));
@@ -111,14 +131,17 @@ void main()
         Kd0 = texture(TextureImage7, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
-    {   
+    {
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = vec3(0.0,0.0,0.0);
+        q = 100.0;
         vec2 tiledCoords = texcoords*50;
-        
+
         //colour of blend map on coord texcoords
         vec4 blendMapColour = texture(TextureImage2,texcoords);
-        
+
         //in blendMap the background texture is black colour
-        float backGroundTextureAmount = 1.0 - (blendMapColour.r + blendMapColour.g + blendMapColour.b); 
+        float backGroundTextureAmount = 1.0 - (blendMapColour.r + blendMapColour.g + blendMapColour.b);
         vec4 backGroundTextureColour = texture(TextureImage0,tiledCoords) * backGroundTextureAmount;
         vec4 blueTextureColour = texture(TextureImage1,tiledCoords) * blendMapColour.b;
         float boostRedTextureColour = 3.0;
@@ -128,29 +151,20 @@ void main()
 
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    
+
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
+    float phong = pow(max(0,dot(r,v)),q);
 
-    color.rgb = Kd0 * (lambert + 0.01);
+    // Espectro da fonte de iluminação
+    vec3 I = vec3(1.0,1.0,1.0);
 
-    // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
-    // necessário:
-    // 1) Habilitar a operação de "blending" de OpenGL logo antes de realizar o
-    //    desenho dos objetos transparentes, com os comandos abaixo no código C++:
-    //      glEnable(GL_BLEND);
-    //      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // 2) Realizar o desenho de todos objetos transparentes *após* ter desenhado
-    //    todos os objetos opacos; e
-    // 3) Realizar o desenho de objetos transparentes ordenados de acordo com
-    //    suas distâncias para a câmera (desenhando primeiro objetos
-    //    transparentes que estão mais longe da câmera).
-    // Alpha default = 1 = 100% opaco = 0% transparente
-    color.a = 1;
+    // Espectro da luz ambiente
+    vec3 Ia = vec3(0.2,0.2,0.2);
 
-    // Cor final com correção gamma, considerando monitor sRGB.
-    // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
+    color.rgb = Kd0 * I * lambert + Ka * Ia + Ks * I * phong;
+
     color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
-} 
+}
 
