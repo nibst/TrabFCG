@@ -381,7 +381,10 @@ int main(int argc, char *argv[])
         }
         if (Collisions::boundingSpheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
             kart.hitObject();
-        
+        for (Entity cow : obstacles){
+            if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, cow))
+                kart.hitObject();
+        }
         kart.move(delta_t);
 
 
