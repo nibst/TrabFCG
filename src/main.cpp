@@ -349,10 +349,11 @@ int main(int argc, char *argv[])
         }
 
         */
-        // for (Entity wall : walls)
-        // {
-        //     if (Collisions::boundingSpheresCollisionTest(wall, 2.0f, kart, 2.0f))
-        // }
+        for (Entity wall : walls)
+        {
+            if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, wall))
+                kart.hitObject();
+        }
         if (Collisions::boundingSpheresCollisionTest(testKart.getPosition(), 1.0f, kart.getPosition(), 1.0f))
             kart.hitObject();
 
