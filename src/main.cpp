@@ -159,7 +159,7 @@ bool g_UsePerspectiveProjection = true;
 bool g_ShowInfoText = true;
 
 bool tecla_A_pressionada = false, tecla_D_pressionada = false, tecla_S_pressionada = false,
-     tecla_W_pressionada = false, tecla_space_pressionada = false, tecla_J_pressionada = false;
+     tecla_W_pressionada = false, tecla_space_pressionada = false, tecla_J_pressionada = false , tecla_ctrl_pressionada = false;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 Camera *camera = new Camera();
@@ -359,19 +359,14 @@ int main(int argc, char *argv[])
             // kart.increasePosition(v.x,v.y,v.z);
             // camera->moveFoward(delta_t);
         }
-        
-        /*if (tecla_space_pressionada)
-        {
-            Entity obstacle = Entity(models[COW], kart.getPosition() + glm::vec4(0.0, 0.6, 0.0, 0.0), 0.0,0.0,0.0, 2.0, 2.0, 2.0);
-
-            obstacles.push_back(obstacle);
-            tecla_space_pressionada = false;
+        if (tecla_ctrl_pressionada){
+            kart.drift();
         }
-        if(tecla_J_pressionada){
-            if (obstacles.size()>0)
-                obstacles.pop_back();
-            tecla_J_pressionada = false;
-        }*/
+        
+        if (tecla_space_pressionada){
+            kart.nitro();
+        }
+
         
         
         for (Entity wall : walls)
@@ -390,9 +385,9 @@ int main(int argc, char *argv[])
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
-        kart.setTurnDirection(Turn::straight);
-        kart.setGear(CarGear::rest);
+        kart.resetModifications();
         movingCow.move(delta_t);
+    
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
 
@@ -436,7 +431,11 @@ int main(int argc, char *argv[])
 
         model = Matrix_Translate(0.0f, -1.1f, 0.0f);
         renderer.render(terrainmodel, model);
-        TextRendering_PrintVector(window, kart.getPosition(), 1.0f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        TextRendering_PrintString(window,"speed: ",0.5f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        TextRendering_PrintString(window,std::to_string(kart.getSpeed()),0.6f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        TextRendering_PrintString(window,"nitro: ",0.9f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        TextRendering_PrintString(window,std::to_string(kart.getNitroFuel()),1.0f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1062,7 +1061,7 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         if (key == GLFW_KEY_0 + i && action == GLFW_PRESS && mod == GLFW_MOD_SHIFT)
             std::exit(100 + i);
     // =================
-
+    
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
@@ -1174,6 +1173,16 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
 
         else if (action == GLFW_RELEASE)
             tecla_J_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
+    }
+    if (key == GLFW_KEY_LEFT_CONTROL){
+        if (action == GLFW_PRESS)
+            tecla_ctrl_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_ctrl_pressionada = false;
 
         else if (action == GLFW_REPEAT)
             ;
