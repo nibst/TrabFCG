@@ -108,6 +108,8 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 void writeEntities(std::ostream& os, const std::vector<SerializedEntity> &vec);
 std::vector<SerializedEntity> readEntities(std::istream& inputStream);
+
+Entity buildVisualizationOfBbox(Entity entity);
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -348,7 +350,7 @@ int main(int argc, char *argv[])
         
         */
         for (Entity wall : walls){
-            if(Collisions::boundingBoxesCollision(kart.getPosition(), kart.getObject().getBboxMin(), kart.getObject().getBboxMax(), wall.getPosition(), wall.getObject().getBboxMin(), wall.getObject().getBboxMax()))
+            if(Collisions::boundingBoxesCollision(wall,kart))
                 kart.hitObject();
         }
         // testKart.move(delta_t);
@@ -1472,4 +1474,7 @@ std::vector<SerializedEntity> readEntities(std::istream& inputStream){
     allSerialized.resize(size);
     inputStream.read((char*)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
     return allSerialized;
+}
+Entity buildVisualizationOfBbox(Entity entity){
+    
 }

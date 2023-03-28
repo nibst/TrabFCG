@@ -38,6 +38,7 @@ class Entity{
         GLfloat getAngleX();
         GLfloat getAngleY();
         GLfloat getAngleZ();
+        glm::vec3 getScales();
 
         SerializedEntity* serialize();
     protected:

@@ -112,3 +112,6 @@ SerializedEntity* Entity::serialize(){
     serializedEntity->sz = this->scaleZ;
     return serializedEntity;
 }
+glm::vec3 Entity::getScales(){
+    return glm::vec3(this->scaleX,this->scaleY,this->scaleZ);
+}

@@ -1,48 +1,45 @@
 #include "collisions.hpp"
-
 namespace Collisions
 {
-  bool boundingBoxesCollision(glm::vec4 firstObjPosition, glm::vec3 firstObjBboxMin, glm::vec3 firstObjBboxMax, glm::vec4 secondObjPosition, glm::vec3 secondObjBboxMin, glm::vec3 secondObjBboxMax)
+  bool boundingBoxesCollision(Entity firstObj, Entity secondObj)
   {
-    // coordenadas do bounding box do primeiro objetdo
-    float bboxFirstObjMinX = (firstObjPosition.x + firstObjBboxMin.x);
-    float bboxFirstObjMaxX = (firstObjPosition.x + firstObjBboxMax.x);
-    float bboxFirstObjMinY = (firstObjPosition.y + firstObjBboxMin.y);
-    float bboxFirstObjMaxY = (firstObjPosition.y + firstObjBboxMax.y);
-    float bboxFirstObjMinZ = (firstObjPosition.z + firstObjBboxMin.z);
-    float bboxFirstObjMaxZ = (firstObjPosition.z + firstObjBboxMax.z);
 
+    glm::vec4 bboxFirstObjMin = glm::vec4(firstObj.getObject().getBboxMin(),1.0f);
+    glm::vec4 bboxFirstObjMax = glm::vec4(firstObj.getObject().getBboxMax(),1.0f);
+    // coordenadas do bounding box do primeiro objeto
+    bboxFirstObjMin = firstObj.getTransformationMatrix() * bboxFirstObjMin;
+    bboxFirstObjMax = firstObj.getTransformationMatrix() * bboxFirstObjMax;
+
+
+    glm::vec4 bboxSecondObjMin = glm::vec4(secondObj.getObject().getBboxMin(),1.0f);
+    glm::vec4 bboxSecondObjMax = glm::vec4(secondObj.getObject().getBboxMax(),1.0f);
     // coordenadas do bounding box do segundo objeto
-    float bboxSecondObjMinX = (secondObjPosition.x + secondObjBboxMin.x);
-    float bboxSecondObjMaxX = (secondObjPosition.x + secondObjBboxMax.x);
-    float bboxSecondObjMinY = (secondObjPosition.y + secondObjBboxMin.y);
-    float bboxSecondObjMaxY = (secondObjPosition.y + secondObjBboxMax.y);
-    float bboxSecondObjMinZ = (secondObjPosition.z + secondObjBboxMin.z);
-    float bboxSecondObjMaxZ = (secondObjPosition.z + secondObjBboxMax.z);
+    bboxSecondObjMin = secondObj.getTransformationMatrix() * bboxSecondObjMin;
+    bboxSecondObjMax = secondObj.getTransformationMatrix() * bboxSecondObjMax;
 
     // se o X não se intercepta
-    if (!(bboxFirstObjMinX >= bboxSecondObjMinX && bboxFirstObjMinX <= bboxSecondObjMaxX ||
-          bboxFirstObjMinX <= bboxSecondObjMinX && bboxFirstObjMinX >= bboxSecondObjMaxX ||
-          bboxFirstObjMaxX >= bboxSecondObjMinX && bboxFirstObjMaxX <= bboxSecondObjMaxX ||
-          bboxFirstObjMaxX <= bboxSecondObjMinX && bboxFirstObjMaxX >= bboxSecondObjMaxX))
+    if (!(bboxFirstObjMin.x >= bboxSecondObjMin.x && bboxFirstObjMin.x <= bboxSecondObjMax.x ||
+          bboxFirstObjMin.x <= bboxSecondObjMin.x && bboxFirstObjMin.x >= bboxSecondObjMax.x ||
+          bboxFirstObjMax.x >= bboxSecondObjMin.x && bboxFirstObjMax.x <= bboxSecondObjMax.x ||
+          bboxFirstObjMax.x <= bboxSecondObjMin.x && bboxFirstObjMax.x >= bboxSecondObjMax.x))
     {
       return false;
     }
 
     // se o Y não se intercepta
-    if (!(bboxFirstObjMinY >= bboxSecondObjMinY && bboxFirstObjMinY <= bboxSecondObjMaxY ||
-          bboxFirstObjMinY <= bboxSecondObjMinY && bboxFirstObjMinY >= bboxSecondObjMaxY ||
-          bboxFirstObjMaxY >= bboxSecondObjMinY && bboxFirstObjMaxY <= bboxSecondObjMaxY ||
-          bboxFirstObjMaxY <= bboxSecondObjMinY && bboxFirstObjMaxY >= bboxSecondObjMaxY))
+    if (!(bboxFirstObjMin.y >= bboxSecondObjMin.y && bboxFirstObjMin.y <= bboxSecondObjMax.y ||
+          bboxFirstObjMin.y <= bboxSecondObjMin.y && bboxFirstObjMin.y >= bboxSecondObjMax.y ||
+          bboxFirstObjMax.y >= bboxSecondObjMin.y && bboxFirstObjMax.y <= bboxSecondObjMax.y ||
+          bboxFirstObjMax.y <= bboxSecondObjMin.y && bboxFirstObjMax.y >= bboxSecondObjMax.y))
     {
       return false;
     }
 
     // se o Z não se intercepta
-    if (!(bboxFirstObjMinZ >= bboxSecondObjMinZ && bboxFirstObjMinZ <= bboxSecondObjMaxZ ||
-          bboxFirstObjMinZ <= bboxSecondObjMinZ && bboxFirstObjMinZ >= bboxSecondObjMaxZ ||
-          bboxFirstObjMaxZ >= bboxSecondObjMinZ && bboxFirstObjMaxZ <= bboxSecondObjMaxZ ||
-          bboxFirstObjMaxZ <= bboxSecondObjMinZ && bboxFirstObjMaxZ >= bboxSecondObjMaxZ))
+    if (!(bboxFirstObjMin.z >= bboxSecondObjMin.z && bboxFirstObjMin.z <= bboxSecondObjMax.z ||
+          bboxFirstObjMin.z <= bboxSecondObjMin.z && bboxFirstObjMin.z >= bboxSecondObjMax.z ||
+          bboxFirstObjMax.z >= bboxSecondObjMin.z && bboxFirstObjMax.z <= bboxSecondObjMax.z ||
+          bboxFirstObjMax.z <= bboxSecondObjMin.z && bboxFirstObjMax.z >= bboxSecondObjMax.z))
     {
       return false;
     }
