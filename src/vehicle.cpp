@@ -22,8 +22,7 @@ void Vehicle::setGear(CarGear gear)
     this->gear = gear;
 }
 
-int Vehicle::move(float delta_time)
-{
+void Vehicle::move(float delta_time){
     this->friction(delta_time);
     this->turn(delta_time);
     float max_speed = 100;

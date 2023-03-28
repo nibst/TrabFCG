@@ -115,3 +115,6 @@ SerializedEntity* Entity::serialize(){
 glm::vec3 Entity::getScales(){
     return glm::vec3(this->scaleX,this->scaleY,this->scaleZ);
 }
+void Entity::setPosition(glm::vec4 position){
+    this->position = position;
+}

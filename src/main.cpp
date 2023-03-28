@@ -108,7 +108,12 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void writeEntities(std::ostream &os, const std::vector<SerializedEntity> &vec);
 std::vector<SerializedEntity> readEntities(std::istream &inputStream);
 
-Entity buildVisualizationOfBbox(Entity entity);
+
+void writeEntities(std::ostream& os, const std::vector<SerializedEntity> &vec);
+std::vector<SerializedEntity> readEntities(std::istream& inputStream);
+void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, GLuint wallVAO, GLuint g_GpuProgramID);
+
+GLuint buildVisualizationOfBbox(Model model);
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -200,11 +205,14 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/textures/anotherbrick.jpg");        // TextureImage4
     LoadTextureImage("../../data/textures/stripes.jpg");             // TextureImage5
     LoadTextureImage("../../data/textures/rainbowBricks.jpg");       // TextureImage6
+    LoadTextureImage("../../data/textures/cow_texture.jpg");         // TextureImage7
+
 #define SPHERE 0
 #define KART 1
 #define PLANE 2
 #define OUTERWALL 3
 #define INNERWALL 4
+#define COW 5
 
     std::map<GLint, Model> models;
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -222,10 +230,9 @@ int main(int argc, char *argv[])
 
     Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera *)new LookAtCamera(&kart);
-    // glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
-    // front = front * 0.2f;
-    // kart.setFrontVector(front);
-    AnimatedEntity testKart = AnimatedEntity(kartmodel);
+    //glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
+    //front = front * 0.2f;
+    //kart.setFrontVector(front);
 
     Model wallmodel;
     wallmodel.loadFromOBJFileName("../../data/wall.obj");
@@ -233,18 +240,35 @@ int main(int argc, char *argv[])
     models[OUTERWALL] = wallmodel;
     models[INNERWALL] = wallmodel; // usado na hora do load do arquivo binario com as paredes
 
-    std::vector<Entity> walls;
-    std::ifstream in("../../wallMap.bin", std::ios::in | std::ios::binary);
-    std::vector<SerializedEntity> allSerialized = readEntities(in);
-    in.close();
+    Model cowmodel;
+    cowmodel.loadFromOBJFileName("../../data/cow.obj");
+    cowmodel.setObjectID(COW);
+    models[COW] = cowmodel;
 
-    for (SerializedEntity serialized : allSerialized)
-    {
-        Entity entity = Entity(serialized, models);
-        // printf("%d\n",entity.getObject().getID());
+
+    AnimatedEntity movingCow = AnimatedEntity(cowmodel);
+    movingCow.scale(2.0,2.0,2.0);
+    //get all walls for rendering
+    std::ifstream inWalls("../../wallMap.bin", std::ios::in | std::ios::binary);
+    std::vector<SerializedEntity> allSerializedWalls = readEntities(inWalls);
+    inWalls.close();
+    //get all obstacles for rendering
+    std::ifstream inObstacles("../../obstaclesMap.bin", std::ios::in | std::ios::binary);
+    std::vector<SerializedEntity> allSerializedCows = readEntities(inObstacles);
+    inObstacles.close();
+    
+    std::vector<Entity> walls;
+    for (SerializedEntity serialized : allSerializedWalls){
+        Entity entity = Entity(serialized,models);
+        //printf("%d\n",entity.getObject().getID());
         walls.push_back(entity);
     }
-
+    std::vector<Entity> obstacles;
+    for (SerializedEntity serialized : allSerializedCows){
+        Entity entity = Entity(serialized,models);
+        //printf("%d\n",entity.getObject().getID());
+        obstacles.push_back(entity);
+    }    
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -254,7 +278,8 @@ int main(int argc, char *argv[])
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
     float prev_time = (float)glfwGetTime();
-
+    GLuint wallVAO = buildVisualizationOfBbox(models[OUTERWALL]);
+    GLuint kartVAO = buildVisualizationOfBbox(models[KART]);
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!(windowManager->shouldCloseWindow()))
     {
@@ -334,37 +359,37 @@ int main(int argc, char *argv[])
             // kart.increasePosition(v.x,v.y,v.z);
             // camera->moveFoward(delta_t);
         }
-        /*
-        if (tecla_space_pressionada)
+        
+        /*if (tecla_space_pressionada)
         {
-            Entity wall = Entity(models[INNERWALL], kart.getPosition() + glm::vec4(0.0, 0.6, 0.0, 0.0), kart.getAngleX(), kart.getAngleY(), kart.getAngleZ(), 1.0, 0.3, 1.0);
+            Entity obstacle = Entity(models[COW], kart.getPosition() + glm::vec4(0.0, 0.6, 0.0, 0.0), 0.0,0.0,0.0, 2.0, 2.0, 2.0);
 
-            walls.push_back(wall);
+            obstacles.push_back(obstacle);
             tecla_space_pressionada = false;
         }
         if(tecla_J_pressionada){
-            if (walls.size()>0)
-                walls.pop_back();
+            if (obstacles.size()>0)
+                obstacles.pop_back();
             tecla_J_pressionada = false;
-        }
-
-        */
+        }*/
+        
+        
         for (Entity wall : walls)
         {
             if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, wall))
                 kart.hitObject();
         }
-        if (Collisions::boundingSpheresCollisionTest(testKart.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+        if (Collisions::boundingSpheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
             kart.hitObject();
-
-        testKart.move(delta_t);
+        
         kart.move(delta_t);
+
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
         kart.setTurnDirection(Turn::straight);
         kart.setGear(CarGear::rest);
-
+        movingCow.move(delta_t);
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
 
@@ -387,12 +412,21 @@ int main(int argc, char *argv[])
 
         // Desenhamos o modelo do coelho;
         renderer.render(kart.getObject(), kart.getTransformationMatrix());
-        renderer.render(testKart.getObject(), testKart.getTransformationMatrix());
-        int numberOfWalls = walls.size();
-        for (int i = 0; i < numberOfWalls; i++)
-        {
-            renderer.render(walls[i].getObject(), walls[i].getTransformationMatrix());
+        renderer.render(movingCow.getObject(), movingCow.getTransformationMatrix());
+    
+        // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
+        // arquivo "shader_vertex.glsl", onde esta é efetivamente
+        // aplicada em todos os pontos.
+
+        for (Entity wall : walls){
+            renderer.render(wall.getObject(), wall.getTransformationMatrix());
         }
+        for (Entity obstacle : obstacles){
+            renderer.render(obstacle.getObject(), obstacle.getTransformationMatrix());
+        }
+        //showCollisionBoxes(walls,kart,kartVAO,wallVAO,renderer.g_GpuProgramID);
+        
+        
         // Desenhamos o plano do chão
         // model = Matrix_Translate(0.0f,-1.1f,0.0f);
         // renderer.render(planemodel,model);
@@ -414,18 +448,18 @@ int main(int argc, char *argv[])
 
         windowManager->updateWindow();
     }
-    /* for making map walls
-
-    std::vector<SerializedEntity> allSerializedWalls;
-    for(Entity wall: walls){
-        SerializedEntity* serializedWall = wall.serialize();
-        allSerializedWalls.push_back(*serializedWall);
+    // for making map things
+    /*    std::vector<SerializedEntity> allSerializedObstacles;
+    for(Entity obstacle: obstacles){
+        SerializedEntity* serializedObstacles = obstacle.serialize();
+        allSerializedObstacles.push_back(*serializedObstacles);
     }
-    std::ofstream out("../../wallMap.bin", std::ios::out | std::ios::binary);
-
-    writeEntities(out,allSerializedWalls);
+    std::ofstream out("../../obstaclesMap.bin", std::ios::out | std::ios::binary);
+    writeEntities(out,allSerializedObstacles);
     out.close();
     */
+    
+    
 
     free(camera);
     // Finalizamos o uso dos recursos do sistema operacional
@@ -1478,6 +1512,204 @@ std::vector<SerializedEntity> readEntities(std::istream &inputStream)
     inputStream.read((char *)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
     return allSerialized;
 }
-Entity buildVisualizationOfBbox(Entity entity)
-{
+GLuint buildVisualizationOfBbox(Model model){
+    glm::vec4 boundingBoxMax = glm::vec4(model.getBboxMax(),1.0);
+    glm::vec4 boundingBoxMin = glm::vec4(model.getBboxMin(),1.0);
+    //boundingBoxMax = entity.getTransformationMatrix() * boundingBoxMax;
+    //boundingBoxMin = entity.getTransformationMatrix() * boundingBoxMin;
+
+    GLfloat model_coefficients[] = {
+        //4 linhas o suficiente para mostrar o bounding box i guess
+        
+    //       X                 Y                    Z             W
+        boundingBoxMax.x,  boundingBoxMax.y,  boundingBoxMax.z, 1.0f, // posição do vértice 0
+
+        boundingBoxMin.x,  boundingBoxMax.y,  boundingBoxMax.z, 1.0f, // posição do vértice 1
+    //       X                 Y                    Z             W
+        boundingBoxMax.x,  boundingBoxMin.y,  boundingBoxMax.z, 1.0f, // posição do vértice 2
+
+        boundingBoxMax.x,  boundingBoxMax.y,  boundingBoxMin.z, 1.0f, // posição do vértice 3
+
+    //       X                 Y                    Z             W
+        boundingBoxMin.x,  boundingBoxMin.y,  boundingBoxMin.z, 1.0f, // posição do vértice 4
+    //       X                 Y                    Z             W
+        boundingBoxMax.x,  boundingBoxMin.y,  boundingBoxMin.z, 1.0f, // posição do vértice 5
+
+        boundingBoxMin.x,  boundingBoxMax.y,  boundingBoxMin.z, 1.0f, // posição do vértice 6
+
+        boundingBoxMin.x,  boundingBoxMin.y,  boundingBoxMax.z, 1.0f // posição do vértice 7
+    };
+    // Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
+    // um buffer de memória que irá conter os valores de um certo atributo de
+    // um conjunto de vértices; por exemplo: posição, cor, normais, coordenadas
+    // de textura.  Neste exemplo utilizaremos vários VBOs, um para cada tipo de atributo.
+    // Agora criamos um VBO para armazenarmos um atributo: posição.
+    GLuint VBO_model_coefficients_id;
+    glGenBuffers(1, &VBO_model_coefficients_id);
+
+    // Criamos o identificador (ID) de um Vertex Array Object (VAO).  Um VAO
+    // contém a definição de vários atributos de um certo conjunto de vértices;
+    // isto é, um VAO irá conter ponteiros para vários VBOs.
+    GLuint vertex_array_object_id;
+    glGenVertexArrays(1, &vertex_array_object_id);
+
+    // "Ligamos" o VAO ("bind"). Informamos que iremos atualizar o VAO cujo ID
+    // está contido na variável "vertex_array_object_id".
+    glBindVertexArray(vertex_array_object_id);
+
+    // "Ligamos" o VBO ("bind"). Informamos que o VBO cujo ID está contido na
+    // variável VBO_model_coefficients_id será modificado a seguir. A
+    // constante "GL_ARRAY_BUFFER" informa que esse buffer é de fato um VBO, e
+    // irá conter atributos de vértices.
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
+
+    // Alocamos memória para o VBO "ligado" acima. Como queremos armazenar
+    // nesse VBO todos os valores contidos no array "model_coefficients", pedimos
+    // para alocar um número de bytes exatamente igual ao tamanho ("size")
+    // desse array. A constante "GL_STATIC_DRAW" dá uma dica para o driver da
+    // GPU sobre como utilizaremos os dados do VBO. Neste caso, estamos dizendo
+    // que não pretendemos alterar tais dados (são estáticos: "STATIC"), e
+    // também dizemos que tais dados serão utilizados para renderizar ou
+    // desenhar ("DRAW").  Pense que:
+    //
+    //            glBufferData()  ==  malloc() do C  ==  new do C++.
+    //
+    glBufferData(GL_ARRAY_BUFFER, sizeof(model_coefficients), NULL, GL_STATIC_DRAW);
+
+    // Finalmente, copiamos os valores do array model_coefficients para dentro do
+    // VBO "ligado" acima.  Pense que:
+    //
+    //            glBufferSubData()  ==  memcpy() do C.
+    //
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(model_coefficients), model_coefficients);
+
+    // Precisamos então informar um índice de "local" ("location"), o qual será
+    // utilizado no shader "shader_vertex.glsl" para acessar os valores
+    // armazenados no VBO "ligado" acima. Também, informamos a dimensão (número de
+    // coeficientes) destes atributos. Como em nosso caso são pontos em coordenadas
+    // homogêneas, temos quatro coeficientes por vértice (X,Y,Z,W). Isso define
+    // um tipo de dado chamado de "vec4" em "shader_vertex.glsl": um vetor com
+    // quatro coeficientes. Finalmente, informamos que os dados estão em ponto
+    // flutuante com 32 bits (GL_FLOAT).
+    // Esta função também informa que o VBO "ligado" acima em glBindBuffer()
+    // está dentro do VAO "ligado" acima por glBindVertexArray().
+    // Veja https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Buffer_Object
+    GLuint location = 0; // "(location = 0)" em "shader_vertex.glsl"
+    GLint  number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // "Ativamos" os atributos. Informamos que os atributos com índice de local
+    // definido acima, na variável "location", deve ser utilizado durante o
+    // rendering.
+    glEnableVertexAttribArray(location);
+
+    // "Desligamos" o VBO, evitando assim que operações posteriores venham a
+    // alterar o mesmo. Isso evita bugs.
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GLfloat color_coefficients[] = {
+
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 0
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 1
+
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 2
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 3
+
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 4
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 5
+
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 6
+        1.0f, 0.0f, 0.0f, 1.0f, // cor do vértice 7
+
+    };
+    GLuint VBO_color_coefficients_id;
+    glGenBuffers(1, &VBO_color_coefficients_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_color_coefficients_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(color_coefficients), NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(color_coefficients), color_coefficients);
+    location = 1; // "(location = 1)" em "shader_vertex.glsl"
+    number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(location);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Vamos então definir polígonos utilizando os vértices do array
+    // model_coefficients.
+    //
+    // Para referência sobre os modos de renderização, veja slides 182-188 do documento Aula_04_Modelagem_Geometrica_3D.pdf.
+    //
+    // Este vetor "indices" define a TOPOLOGIA (veja slides 103-110 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
+    //
+    GLuint indices[] = {
+    // Definimos os índices dos vértices que definem as ARESTAS de um cubo
+    // através de 6 linhas que serão desenhadas com o modo de renderização
+    // GL_LINES.
+        0, 1, // linha 1 
+        0, 2, // linha 2 
+        0, 3, // linha 3 
+        4, 5, // linha 4 
+        4, 6, // linha 5 
+        4, 7, // linha 6 
+    };
+    // Criamos um buffer OpenGL para armazenar os índices acima
+    GLuint indices_id;
+    glGenBuffers(1, &indices_id);
+
+    // "Ligamos" o buffer. Note que o tipo agora é GL_ELEMENT_ARRAY_BUFFER.
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
+
+    // Alocamos memória para o buffer.
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), NULL, GL_STATIC_DRAW);
+
+    // Copiamos os valores do array indices[] para dentro do buffer.
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(indices), indices);
+
+    // NÃO faça a chamada abaixo! Diferente de um VBO (GL_ARRAY_BUFFER), um
+    // array de índices (GL_ELEMENT_ARRAY_BUFFER) não pode ser "desligado",
+    // caso contrário o VAO irá perder a informação sobre os índices.
+    //
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // XXX Errado!
+    //
+
+    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
+    // alterar o mesmo. Isso evita bugs.
+    glBindVertexArray(0);
+
+    // Retornamos o ID do VAO. Isso é tudo que será necessário para renderizar
+    // os triângulos definidos acima. Veja a chamada glDrawElements() em main().
+    return vertex_array_object_id;
+}
+
+
+void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, GLuint wallVAO, GLuint g_GpuProgramID){
+        int numberOfWalls = walls.size();
+        for (int i = 0; i < numberOfWalls; i++){
+            glLineWidth(10);
+            GLint model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
+            glBindVertexArray(wallVAO);
+            glm::mat4 modelA = walls[i].getTransformationMatrix();
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelA));
+            glDrawElements(
+                GL_LINES,
+                12,
+                GL_UNSIGNED_INT,
+                (void*)0
+                );
+            glBindVertexArray(0);
+
+        }
+
+        
+        GLint model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
+        glBindVertexArray(kartVAO);
+        glm::mat4 modelB = kart.getTransformationMatrix();
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelB));
+        glDrawElements(
+            GL_LINES,
+            12,
+            GL_UNSIGNED_INT,
+            (void*)0
+            );
+        glBindVertexArray(0);
+    
 }

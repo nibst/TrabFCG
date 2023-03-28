@@ -33,6 +33,7 @@ class Entity{
         void scale(GLfloat sx,GLfloat sy, GLfloat sz);
         Model getObject();
         void setObject(Model object);
+        void setPosition(glm::vec4 position);
         glm::mat4 getTransformationMatrix();
         glm::vec4 getPosition();
         GLfloat getAngleX();

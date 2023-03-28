@@ -29,7 +29,7 @@ class Vehicle: public Entity{
             GLfloat angleX,GLfloat angleY,GLfloat angleZ,
             GLfloat sx, GLfloat sy, GLfloat sz );
 
-        int move(float delta_time);
+        void move(float delta_time);
         void setGear(CarGear gear);
         void setTurnDirection(Turn turnDirection);
         void friction(float delta_time);

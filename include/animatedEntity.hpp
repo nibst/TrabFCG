@@ -2,10 +2,10 @@
 #include "entity.hpp"
 #include <vector>
 
-#define DEFAULT_P1 glm::vec4(0.0,0.0,0.0,1.0)
-#define DEFAULT_P2 glm::vec4(50.0,0.0,20.0,1.0)
-#define DEFAULT_P3 glm::vec4(10.0,0.0,30.0,1.0)
-#define DEFAULT_P4 glm::vec4(60.0,0.0,40.0,1.0)
+#define DEFAULT_P1 glm::vec4(5.0,0.3,5.0,1.0)
+#define DEFAULT_P2 glm::vec4(50.0,0.3,20.0,1.0)
+#define DEFAULT_P3 glm::vec4(10.0,0.3,30.0,1.0)
+#define DEFAULT_P4 glm::vec4(60.0,0.3,40.0,1.0)
 #define DEFAULT_SPEED 0.2f
 #define INITIAL_BEZIER_T 0.0f
 

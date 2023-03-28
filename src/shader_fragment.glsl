@@ -24,6 +24,7 @@ uniform mat4 projection;
 #define PLANE  2
 #define OUTERWALL 3
 #define INNERWALL 4
+#define COW 5
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -38,6 +39,8 @@ uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
+uniform sampler2D TextureImage7;
+
 
 
 
@@ -93,6 +96,19 @@ void main()
     else if (object_id == INNERWALL){
         float adjustObjectBrightness = 3.0;
         Kd0 = texture(TextureImage6, texcoords*3).rgb * adjustObjectBrightness;
+    }
+    else if(object_id == COW){
+        
+        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
+        float radius = 3.0;
+        vec4 plinha = bbox_center + radius*((position_model - bbox_center)/(length(position_model - bbox_center)));
+        vec4 vec_p = plinha - bbox_center;
+        float theta = atan(vec_p.x,vec_p.z);
+        float phi = asin(vec_p.y/radius);
+
+        U = (theta + M_PI)/(2*M_PI);
+        V = (phi + M_PI_2)/M_PI;
+        Kd0 = texture(TextureImage7, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
     {   

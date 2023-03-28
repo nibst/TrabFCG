@@ -34,3 +34,12 @@ long AnimatedEntity::factorial(const int n){
 float AnimatedEntity::bernsteinPolynomial(const int k,const int n){
     return (this->factorial(n)/(this->factorial(k)*(this->factorial(n-k))))*pow(this->bezier_t,k)*pow(1-this->bezier_t,n-k);
 }
+
+void AnimatedEntity::setBezierPoints(const std::vector<glm::vec4> points){
+    
+    std::vector<glm::vec4> newBezierPoints;
+    for(glm::vec4 point : points){
+        newBezierPoints.push_back(point);
+    }
+    this->bezierPoints = newBezierPoints;
+}
