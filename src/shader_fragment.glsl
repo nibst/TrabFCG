@@ -25,6 +25,7 @@ uniform mat4 projection;
 #define OUTERWALL 3
 #define INNERWALL 4
 #define COW 5
+#define FINISH 6
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -40,6 +41,8 @@ uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
 uniform sampler2D TextureImage7;
+uniform sampler2D TextureImage8;
+
 
 
 
@@ -130,6 +133,14 @@ void main()
         V = (phi + M_PI_2)/M_PI;
         Kd0 = texture(TextureImage7, vec2(U,V)).rgb;
     }
+    else if ( object_id == FINISH ){
+        Ks = vec3(0.6, 0.6, 0.6);
+        Ka = Ks/8;
+        q = 22.0;
+        //use texcoords from obj model
+        Kd0 =texture(TextureImage8, texcoords).rgb;
+    }
+        
     else if ( object_id == PLANE )
     {
         Ks = vec3(0.0,0.0,0.0);

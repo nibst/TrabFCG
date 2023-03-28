@@ -206,18 +206,20 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/textures/stripes.jpg");             // TextureImage5
     LoadTextureImage("../../data/textures/rainbowBricks.jpg");       // TextureImage6
     LoadTextureImage("../../data/textures/cow_texture.jpg");         // TextureImage7
-
+    LoadTextureImage("../../data/textures/Textures.png");            // TextureImage8
 #define SPHERE 0
 #define KART 1
 #define PLANE 2
 #define OUTERWALL 3
 #define INNERWALL 4
 #define COW 5
+#define FINISH 6
 
     std::map<GLint, Model> models;
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     Terrain terrain = Terrain();
     VAO terrainVao = VAO();
+
     Model terrainmodel;
     terrainmodel = terrain.generateTerrain(terrainVao);
     terrainmodel.setObjectID(PLANE);
@@ -245,6 +247,12 @@ int main(int argc, char *argv[])
     cowmodel.setObjectID(COW);
     models[COW] = cowmodel;
 
+
+    Model finishmodel;
+    finishmodel.loadFromOBJFileName("../../data/uploads_files_3661170_gate.obj");
+    finishmodel.setObjectID(FINISH);
+    models[FINISH] = finishmodel;
+    Entity finishLine = Entity(models[FINISH],glm::vec4(24.588949,-1.000000,50.209194,1.0),0.0,0.0,0.0,2.0,1.0,2.0);
 
     AnimatedEntity movingCow = AnimatedEntity(cowmodel);
     movingCow.scale(2.0,2.0,2.0);
@@ -278,8 +286,11 @@ int main(int argc, char *argv[])
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
     float prev_time = (float)glfwGetTime();
+    float start = (float)glfwGetTime();
+    float end;
     GLuint wallVAO = buildVisualizationOfBbox(models[OUTERWALL]);
     GLuint kartVAO = buildVisualizationOfBbox(models[KART]);
+    bool gameWon = false;
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!(windowManager->shouldCloseWindow()))
     {
@@ -367,8 +378,6 @@ int main(int argc, char *argv[])
             kart.nitro();
         }
 
-        
-        
         for (Entity wall : walls)
         {
             if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, wall))
@@ -380,16 +389,34 @@ int main(int argc, char *argv[])
             if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, cow))
                 kart.hitObject();
         }
+        if (Collisions::boundingSpheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f)){
+            end = (float)glfwGetTime();
+            gameWon = true;
+            //kart.setPosition(glm::vec4(100.0f,0.0f,0.0f,1.0f));
+        }
+            
         kart.move(delta_t);
 
+        float lineheight = TextRendering_LineHeight(window);
+        float charwidth = TextRendering_CharWidth(window);
+        
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
         kart.resetModifications();
         movingCow.move(delta_t);
     
-        float lineheight = TextRendering_LineHeight(window);
-        float charwidth = TextRendering_CharWidth(window);
+        if (gameWon){
+            TextRendering_PrintString(window,"TIME:  ",0.1f - (18 + 1) * charwidth, 0.5f - lineheight, 4.0f);
+            float totalTime = end - start;
+            TextRendering_PrintString(window,std::to_string(totalTime),0.4f - (10 + 1) * charwidth, 0.5f - lineheight, 4.0f);
+            if(tecla_J_pressionada){
+                start = (float)glfwGetTime();
+                kart = Vehicle(models[KART]);
+                gameWon = false;
+            }
+
+        }
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -409,32 +436,28 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(renderer.g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Desenhamos o modelo do coelho;
-        renderer.render(kart.getObject(), kart.getTransformationMatrix());
-        renderer.render(movingCow.getObject(), movingCow.getTransformationMatrix());
-    
-        // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
-        // arquivo "shader_vertex.glsl", onde esta é efetivamente
-        // aplicada em todos os pontos.
+        if (!gameWon){
+            renderer.render(kart.getObject(), kart.getTransformationMatrix());
+            renderer.render(movingCow.getObject(), movingCow.getTransformationMatrix());
+            renderer.render(finishLine.getObject(),finishLine.getTransformationMatrix());
+            // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
+            // arquivo "shader_vertex.glsl", onde esta é efetivamente
+            // aplicada em todos os pontos.
 
-        for (Entity wall : walls){
-            renderer.render(wall.getObject(), wall.getTransformationMatrix());
+            for (Entity wall : walls){
+                renderer.render(wall.getObject(), wall.getTransformationMatrix());
+            }
+            for (Entity obstacle : obstacles){
+                renderer.render(obstacle.getObject(), obstacle.getTransformationMatrix());
+            }
+            model = Matrix_Translate(0.0f, -1.1f, 0.0f);
+            renderer.render(terrainmodel, model);
+            TextRendering_PrintString(window,"speed: ",0.1f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window,std::to_string(kart.getSpeed()),0.2f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window,"nitro: ",0.8f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window,std::to_string(kart.getNitroFuel()),0.9f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
         }
-        for (Entity obstacle : obstacles){
-            renderer.render(obstacle.getObject(), obstacle.getTransformationMatrix());
-        }
-        //showCollisionBoxes(walls,kart,kartVAO,wallVAO,renderer.g_GpuProgramID);
-        
-        
-        // Desenhamos o plano do chão
-        // model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        // renderer.render(planemodel,model);
 
-        model = Matrix_Translate(0.0f, -1.1f, 0.0f);
-        renderer.render(terrainmodel, model);
-        TextRendering_PrintString(window,"speed: ",0.5f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
-        TextRendering_PrintString(window,std::to_string(kart.getSpeed()),0.6f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
-        TextRendering_PrintString(window,"nitro: ",0.9f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
-        TextRendering_PrintString(window,std::to_string(kart.getNitroFuel()),1.0f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
         
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
