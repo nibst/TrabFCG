@@ -73,7 +73,7 @@ void main()
     vec4 n = normalize(normal);
 
     // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
-    vec4 l = normalize(vec4(1.0,1.0,0.5,0.0));
+    vec4 l = normalize(vec4(1.0,1.0,1.0,0.0));
 
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
@@ -93,9 +93,9 @@ void main()
 
     if ( object_id == KART )
     {
-        Ks = vec3(0.1,0.1,0.7);
-        Ka = vec3(0.01,0.1,0.4);
-        q = 2.0;
+        Ks = vec3(0.8, 0.8, 0.8);
+        Ka = Ks/8;
+        q = 100.0;
         //use texcoords from obj model
         Kd0 =texture(TextureImage3, texcoords).rgb;
     }
@@ -103,20 +103,20 @@ void main()
 
         //Computa a cor da textura neste ponto
         Kd0 = texture(TextureImage4, texcoords*5).rgb;
-        Ks = vec3(0.3,0.3,0.3);
-        Ka = vec3(0.0,0.0,0.0);
-        q = 20.0;
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = vec3(0.1,0.1,0.1);
+        q = 2.0;
     }
     else if (object_id == INNERWALL){
         float adjustObjectBrightness = 3.0;
         Kd0 = texture(TextureImage6, texcoords*3).rgb * adjustObjectBrightness;
-        Ks = vec3(0.3,0.3,0.3);
-        Ka = vec3(0.0,0.0,0.0);
-        q = 20.0;
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = vec3(0.1,0.1,0.1);
+        q = 0.0;
     }
     else if(object_id == COW){
-        Ks = vec3(0.5,0.5,0.5);
-        Ka = vec3(0.2,0.2,0.2);
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = vec3(0.0,0.0,0.0);
         q = 1.0;
 
         vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
@@ -150,21 +150,22 @@ void main()
     }
 
 
-    // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-
-
-    // Equação de Iluminação
-    float lambert = max(0,dot(n,l));
-    float phong = pow(max(0,dot(r,v)),q);
-
     // Espectro da fonte de iluminação
     vec3 I = vec3(1.0,1.0,1.0);
 
+    // Equação de Iluminação
+    float lambert = max(0,dot(n,l));
+    vec4 h = l + v;
+    h = h/length(h);
+
+    vec3 blinnPhong =  Ks*I*pow(max(0,dot(n,h)),q);
+
+
     // Espectro da luz ambiente
-    vec3 Ia = vec3(0.2,0.2,0.2);
+    vec3 Ia = vec3(0.1,0.1,0.1);
 
-    color.rgb = Kd0 * I * lambert + Ka * Ia + Ks * I * phong;
-
+    color.rgb = Kd0 * I *(lambert + 0.01) + Ka*Ia + blinnPhong; 
+    color.a = 1;
     color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
 }
 
