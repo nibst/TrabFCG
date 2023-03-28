@@ -4,7 +4,7 @@
 #include <glm/vec4.hpp>
 #include "model.hpp"
 #include "entity.hpp"
-#define DEFAULT_FRONT_VECTOR glm::vec4(0.85,0.0,0.5,0.0)
+#define DEFAULT_FRONT_VECTOR glm::vec4(1.58,0.0,1.0,0.0)
 #define DEFAULT_VEHICLE_ACCELERATION 10.0
 #define DEFAULT_VELOCITY_VECTOR glm::vec4(0.0,0.0,0.0,0.0)
 #define DEFAULT_UP_VECTOR glm::vec4(0.0f,1.0f,0.0f,0.0f)
@@ -33,6 +33,10 @@ class Vehicle: public Entity{
         void setGear(CarGear gear);
         void setTurnDirection(Turn turnDirection);
         void friction(float delta_time);
+        void hitObject();
+        void setFrontVector(glm::vec4 frontVector);
+        glm::vec4 getFrontVector();
+        glm::vec4 getUpVector();
 
 
     private:

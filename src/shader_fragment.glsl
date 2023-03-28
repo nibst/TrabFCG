@@ -22,6 +22,8 @@ uniform mat4 projection;
 #define SPHERE 0
 #define KART  1
 #define PLANE  2
+#define OUTERWALL 3
+#define INNERWALL 4
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -33,6 +35,12 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
+uniform sampler2D TextureImage6;
+
+
+
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -77,6 +85,15 @@ void main()
         //use texcoords from obj model
         Kd0 =texture(TextureImage3, texcoords).rgb;
     }
+    else if ( object_id == OUTERWALL ){
+
+        //Computa a cor da textura neste ponto
+        Kd0 = texture(TextureImage4, texcoords*5).rgb;
+    }
+    else if (object_id == INNERWALL){
+        float adjustObjectBrightness = 3.0;
+        Kd0 = texture(TextureImage6, texcoords*3).rgb * adjustObjectBrightness;
+    }
     else if ( object_id == PLANE )
     {   
         vec2 tiledCoords = texcoords*50;
@@ -88,8 +105,11 @@ void main()
         float backGroundTextureAmount = 1.0 - (blendMapColour.r + blendMapColour.g + blendMapColour.b); 
         vec4 backGroundTextureColour = texture(TextureImage0,tiledCoords) * backGroundTextureAmount;
         vec4 blueTextureColour = texture(TextureImage1,tiledCoords) * blendMapColour.b;
-        Kd0 = backGroundTextureColour.rgb + blueTextureColour.rgb;
+        float boostRedTextureColour = 3.0;
+        vec4 redTextureColour = texture(TextureImage5,tiledCoords) * blendMapColour.r*boostRedTextureColour;
+        Kd0 = backGroundTextureColour.rgb + blueTextureColour.rgb + redTextureColour.rgb;
     }
+
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     

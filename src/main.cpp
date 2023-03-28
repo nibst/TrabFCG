@@ -104,6 +104,10 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
+
+
+void writeEntities(std::ostream& os, const std::vector<SerializedEntity> &vec);
+std::vector<SerializedEntity> readEntities(std::istream& inputStream);
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -148,7 +152,8 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
-bool tecla_A_pressionada = false, tecla_D_pressionada = false, tecla_S_pressionada = false, tecla_W_pressionada = false;
+bool tecla_A_pressionada = false, tecla_D_pressionada = false, tecla_S_pressionada = false,
+tecla_W_pressionada = false, tecla_space_pressionada = false,tecla_J_pressionada=false;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 Camera *camera = new Camera();
@@ -189,25 +194,54 @@ int main(int argc, char *argv[])
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/grass.jpeg");                       // TextureImage0
     LoadTextureImage("../../data/textures/asphalt_road.png");        // TextureImage1
-    LoadTextureImage("../../data/textures/blendMapAmongus.jpg");     // TextureImage2
+    LoadTextureImage("../../data/textures/marioKartMap.jpg");        // TextureImage2
     LoadTextureImage("../../data/textures/GoKart_[Albedo].tga.png"); // TextureImage3
+    LoadTextureImage("../../data/textures/anotherbrick.jpg");        // TextureImage4
+    LoadTextureImage("../../data/textures/stripes.jpg");             // TextureImage5
+    LoadTextureImage("../../data/textures/rainbowBricks.jpg");       // TextureImage6
 #define SPHERE 0
 #define KART 1
 #define PLANE 2
+#define OUTERWALL 3
+#define INNERWALL 4
+
+    std::map<GLint, Model> models;
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     Terrain terrain = Terrain();
     VAO terrainVao = VAO();
     Model terrainmodel;
     terrainmodel = terrain.generateTerrain(terrainVao);
     terrainmodel.setObjectID(PLANE);
+    models[PLANE] = terrainmodel;
 
     Model kartmodel;
-    kartmodel.loadFromOBJFileName("../../data/GoKart.obj");
+    kartmodel.loadFromOBJFileName("../../data/GoKart.obj"); // loadFromOBJFileName("../../data/GoKart.obj");
     kartmodel.setObjectID(KART);
+    models[KART] = kartmodel;
+
     Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera *)new LookAtCamera(&kart);
-
+    //glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
+    //front = front * 0.2f;
+    //kart.setFrontVector(front);
     AnimatedEntity testKart = AnimatedEntity(kartmodel);
+
+    Model wallmodel;
+    wallmodel.loadFromOBJFileName("../../data/wall.obj");
+    wallmodel.setObjectID(OUTERWALL);
+    models[OUTERWALL] = wallmodel;
+    models[INNERWALL] = wallmodel; //usado na hora do load do arquivo binario com as paredes
+
+    std::vector<Entity> walls;
+    std::ifstream in("../../wallMap.bin", std::ios::in | std::ios::binary);
+    std::vector<SerializedEntity> allSerialized = readEntities(in);
+    in.close();
+
+    for (SerializedEntity serialized : allSerialized){
+        Entity entity = Entity(serialized,models);
+        //printf("%d\n",entity.getObject().getID());
+        walls.push_back(entity);
+    }
 
     if (argc > 1)
     {
@@ -298,10 +332,29 @@ int main(int argc, char *argv[])
             // kart.increasePosition(v.x,v.y,v.z);
             // camera->moveFoward(delta_t);
         }
+        /*
+        if (tecla_space_pressionada)
+        {
+            Entity wall = Entity(models[INNERWALL], kart.getPosition() + glm::vec4(0.0, 0.6, 0.0, 0.0), kart.getAngleX(), kart.getAngleY(), kart.getAngleZ(), 1.0, 0.3, 1.0);
+
+            walls.push_back(wall);
+            tecla_space_pressionada = false;
+        }
+        if(tecla_J_pressionada){
+            if (walls.size()>0)
+                walls.pop_back();
+            tecla_J_pressionada = false;
+        }
+        
+        */
+        for (Entity wall : walls){
+            if(Collisions::boundingBoxesCollision(kart.getPosition(), kart.getObject().getBboxMin(), kart.getObject().getBboxMax(), wall.getPosition(), wall.getObject().getBboxMin(), wall.getObject().getBboxMax()))
+                kart.hitObject();
+        }
         // testKart.move(delta_t);
         kart.move(delta_t);
 
-        std::cout << Collisions::boundingBoxesCollision(kart.getPosition(), kart.getObject().getBboxMin(), kart.getObject().getBboxMax(), testKart.getPosition(), testKart.getObject().getBboxMin(), testKart.getObject().getBboxMax()) << std::endl;
+        // std::cout << Collisions::boundingBoxesCollision(kart.getPosition(), kart.getObject().getBboxMin(), kart.getObject().getBboxMax(), testKart.getPosition(), testKart.getObject().getBboxMin(), testKart.getObject().getBboxMax()) << std::endl;
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
@@ -331,14 +384,18 @@ int main(int argc, char *argv[])
         // Desenhamos o modelo do coelho;
         renderer.render(kart.getObject(), kart.getTransformationMatrix());
         renderer.render(testKart.getObject(), testKart.getTransformationMatrix());
-
+        int numberOfWalls = walls.size();
+        for (int i = 0; i < numberOfWalls; i++)
+        {
+            renderer.render(walls[i].getObject(), walls[i].getTransformationMatrix());
+        }
         // Desenhamos o plano do chão
         // model = Matrix_Translate(0.0f,-1.1f,0.0f);
         // renderer.render(planemodel,model);
 
         model = Matrix_Translate(0.0f, -1.1f, 0.0f);
         renderer.render(terrainmodel, model);
-        TextRendering_PrintVector(window, camera->getViewVector(), 1.0f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
+        TextRendering_PrintVector(window, kart.getPosition(), 1.0f - (8 + 1) * charwidth, 1.0f - lineheight, 1.0f);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -353,6 +410,19 @@ int main(int argc, char *argv[])
 
         windowManager->updateWindow();
     }
+    /* for making map walls
+    
+    std::vector<SerializedEntity> allSerializedWalls;
+    for(Entity wall: walls){
+        SerializedEntity* serializedWall = wall.serialize();
+        allSerializedWalls.push_back(*serializedWall);
+    }
+    std::ofstream out("../../wallMap.bin", std::ios::out | std::ios::binary);
+
+    writeEntities(out,allSerializedWalls);
+    out.close();
+    */
+
     free(camera);
     // Finalizamos o uso dos recursos do sistema operacional
     glfwTerminate();
@@ -608,6 +678,7 @@ void BuildTrianglesAndAddToVirtualScene(ObjModel *model)
         glBindBuffer(GL_ARRAY_BUFFER, VBO_texture_coefficients_id);
         glBufferData(GL_ARRAY_BUFFER, texture_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
         glBufferSubData(GL_ARRAY_BUFFER, 0, texture_coefficients.size() * sizeof(float), texture_coefficients.data());
+
         location = 2;             // "(location = 1)" em "shader_vertex.glsl"
         number_of_dimensions = 2; // vec2 em "shader_vertex.glsl"
         glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
@@ -884,12 +955,16 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
         // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
         float phimax = 3.141592f / 2;
         float phimin = -phimax;
-
         if (g_CameraPhi > phimax)
             g_CameraPhi = phimax;
 
         if (g_CameraPhi < phimin)
             g_CameraPhi = phimin;
+        //para nao flipar a camera
+        if (g_CameraPhi >= -0.1 && g_CameraPhi<0.0)
+            g_CameraPhi = -0.1;
+        if (g_CameraPhi <= 0.1 && g_CameraPhi>0.0)
+            g_CameraPhi = 0.1;
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
@@ -976,11 +1051,16 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_SPACE)
     {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
+        if (action == GLFW_PRESS)
+            tecla_space_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_space_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
     }
 
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
@@ -1042,6 +1122,17 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
 
         else if (action == GLFW_RELEASE)
             tecla_A_pressionada = false;
+
+        else if (action == GLFW_REPEAT)
+            ;
+    }
+    if (key == GLFW_KEY_J)
+    {
+        if (action == GLFW_PRESS)
+            tecla_J_pressionada = true;
+
+        else if (action == GLFW_RELEASE)
+            tecla_J_pressionada = false;
 
         else if (action == GLFW_REPEAT)
             ;
@@ -1366,3 +1457,19 @@ void PrintObjModelInfo(ObjModel *model)
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
+
+void writeEntities(std::ostream& outputStream, const std::vector<SerializedEntity> &vec)
+{
+    typename std::vector<SerializedEntity>::size_type size = vec.size();
+    outputStream.write((char*)&size, sizeof(size));
+    outputStream.write((char*)&vec[0], vec.size() * sizeof(SerializedEntity));
+}
+std::vector<SerializedEntity> readEntities(std::istream& inputStream){
+    
+    typename std::vector<SerializedEntity>::size_type size = 0;
+    inputStream.read((char*)&size, sizeof(size));
+    std::vector<SerializedEntity> allSerialized;
+    allSerialized.resize(size);
+    inputStream.read((char*)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
+    return allSerialized;
+}

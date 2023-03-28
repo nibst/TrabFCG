@@ -5,7 +5,7 @@
 #define DEFAULT_PHI 1.0f
 #define DEFAULT_THETA 0.0f
 #define DEFAULT_NEAR -0.1f
-#define DEFAULT_FAR -100.f
+#define DEFAULT_FAR -150.f
 #define DEFAULT_RATIO 1.0f
 #define DEFAULT_UP glm::vec4(0.0f,1.0f,0.0f,0.0f)
 #define DEFAULT_SPEED 14.5f

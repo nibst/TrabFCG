@@ -48,7 +48,8 @@ static glm::vec4 lerp(const glm::vec4 A, const glm::vec4 B, float t ){
 }
 
 void Vehicle::turn(float delta_time){
-    float steer_angle = this->turnDirection * 0.03;
+    const float steerSensitivity = 0.04;
+    float steer_angle = this->turnDirection * steerSensitivity;
     this->angleY-= steer_angle;
     glm::vec4 newFrontVector = this->frontVector * Matrix_Rotate_Y(steer_angle);//this works until there is verticality on car movements
     float amount = delta_time * 0.1;
@@ -57,7 +58,7 @@ void Vehicle::turn(float delta_time){
 
 void Vehicle::friction(float delta_time){
     glm::vec4 right_vector = crossproduct(this->frontVector,this->upVector);
-    float lateral_friction_factor = 1.5f;
+    float lateral_friction_factor = 2.5f;
     glm::vec4 lateral_velocity = right_vector * dotproduct(this->velocityVector, right_vector);
     glm::vec4 lateral_friction = -lateral_velocity * lateral_friction_factor;
 
@@ -68,4 +69,13 @@ void Vehicle::friction(float delta_time){
     this->velocityVector += (backwards_friction + lateral_friction) * delta_time;
 
 }
- 
+void Vehicle::setFrontVector(glm::vec4 frontVector){
+    this->frontVector = frontVector;
+}
+glm::vec4 Vehicle::getFrontVector(){return this->frontVector;}
+glm::vec4 Vehicle::getUpVector(){return this->upVector;}
+
+
+void Vehicle::hitObject(){
+    this->velocityVector -= this->velocityVector*1.5f;
+}

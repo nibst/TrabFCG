@@ -25,6 +25,24 @@ Entity::Entity(
     this->scaleY = sy;
     this->scaleZ = sz;
 }
+Entity::Entity(const SerializedEntity serializedEntity, std::map<GLint,Model> possibleModels){
+    //deserialize and load
+    this->object = possibleModels[serializedEntity.modelID];
+    this->object.setObjectID(serializedEntity.modelID); // for same models with different texture
+
+    this->position.x = serializedEntity.posx;
+    this->position.y = serializedEntity.posy;
+    this->position.z = serializedEntity.posz;
+    this->position.w = serializedEntity.posw;
+
+    this->angleX = serializedEntity.angleX;
+    this->angleY = serializedEntity.angleY;
+    this->angleZ =serializedEntity.angleZ;
+
+    this->scaleX = serializedEntity.sx;
+    this->scaleY = serializedEntity.sy;
+    this->scaleZ = serializedEntity.sz;
+}
 
 void Entity::increasePosition(GLfloat x, GLfloat y, GLfloat z){
     this->position.x += x;
@@ -43,6 +61,9 @@ void Entity::scale(GLfloat sx,GLfloat sy, GLfloat sz){
 }
 Model Entity::getObject(){
     return this->object;
+}
+void Entity::setObject(Model object){
+    this->object = object;
 }
 glm::mat4 Entity::getTransformationMatrix(){
     glm::mat4 matrix = Matrix_Identity();
@@ -71,3 +92,23 @@ GLfloat Entity::getAngleZ(){
     return this->angleZ;
 }
 void rotateAroundAxis();
+
+
+SerializedEntity* Entity::serialize(){
+    SerializedEntity* serializedEntity = (SerializedEntity*) malloc(sizeof(SerializedEntity));
+    serializedEntity->modelID = this->object.getID();
+
+    serializedEntity->posx = this->position.x;
+    serializedEntity->posy = this->position.y;
+    serializedEntity->posz = this->position.z;
+    serializedEntity->posw = this->position.w;
+
+    serializedEntity->angleX = this->angleX;
+    serializedEntity->angleY = this->angleY;
+    serializedEntity->angleZ = this->angleZ;
+
+    serializedEntity->sx = this->scaleX;
+    serializedEntity->sy = this->scaleY;
+    serializedEntity->sz = this->scaleZ;
+    return serializedEntity;
+}
