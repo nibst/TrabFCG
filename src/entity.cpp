@@ -9,6 +9,7 @@ Entity::Entity(Model object){
     this->scaleX = 1.0f;
     this->scaleY = 1.0f;
     this->scaleZ = 1.0f;
+    this->computeAABB();
 }
 Entity::Entity(
             Model object,glm::vec4 initialPosition,
@@ -24,6 +25,7 @@ Entity::Entity(
     this->scaleX = sx;
     this->scaleY = sy;
     this->scaleZ = sz;
+    this->computeAABB();
 }
 Entity::Entity(const SerializedEntity serializedEntity, std::map<GLint,Model> possibleModels){
     //deserialize and load
@@ -42,6 +44,7 @@ Entity::Entity(const SerializedEntity serializedEntity, std::map<GLint,Model> po
     this->scaleX = serializedEntity.sx;
     this->scaleY = serializedEntity.sy;
     this->scaleZ = serializedEntity.sz;
+    this->computeAABB();
 }
 
 void Entity::increasePosition(GLfloat x, GLfloat y, GLfloat z){
@@ -117,4 +120,47 @@ glm::vec3 Entity::getScales(){
 }
 void Entity::setPosition(glm::vec4 position){
     this->position = position;
+}
+void Entity::populateCorners(glm::vec4 corners[]){
+    glm::vec3 bboxMin  = this->getObject().getBboxMin();
+    glm::vec3 bboxMax  = this->getObject().getBboxMax();
+    corners[0] = glm::vec4(bboxMin,1.0);
+    corners[1] = glm::vec4(bboxMin.x, bboxMin.y, bboxMax.z,1.0);
+    corners[2] = glm::vec4(bboxMin.x, bboxMax.y, bboxMin.z,1.0);
+    corners[3] = glm::vec4(bboxMax.x, bboxMin.y, bboxMin.z,1.0);
+    corners[4] = glm::vec4(bboxMin.x, bboxMax.y, bboxMax.z,1.0);
+    corners[5] = glm::vec4(bboxMax.x, bboxMin.y, bboxMax.z,1.0);
+    corners[6] = glm::vec4(bboxMax.x, bboxMax.y, bboxMin.z,1.0);
+    corners[7] = glm::vec4(bboxMax,1.0);
+}
+void Entity::computeAABB(){
+    glm::vec4 corners[8];
+
+    populateCorners(corners);
+
+    const float minval = std::numeric_limits<float>::min();
+    const float maxval = std::numeric_limits<float>::max();
+
+    glm::vec3 AABB_min = glm::vec3(maxval,maxval,maxval);
+    glm::vec3 AABB_max = glm::vec3(minval,minval,minval);
+    // Transform all of the corners, and keep track of the greatest and least
+    // values we see on each coordinate axis.
+    for(int i = 0; i < 8; i++) {
+        glm::vec4 transformed = this->getTransformationMatrix() * corners[i];
+        AABB_min.x = std::min(AABB_min.x, transformed.x);
+        AABB_min.y = std::min(AABB_min.y, transformed.y);
+        AABB_min.z = std::min(AABB_min.z, transformed.z);
+        AABB_max.x = std::max(AABB_max.x, transformed.x);
+        AABB_max.y = std::max(AABB_max.y, transformed.y);
+        AABB_max.z = std::max(AABB_max.z, transformed.z);
+    }
+    this->AABBMax = AABB_max;
+    this->AABBMin = AABB_min;
+}
+glm::vec3 Entity::getAABBMax(){
+    return this->AABBMax;
+}
+
+glm::vec3 Entity::getAABBMin(){
+    return this->AABBMin;
 }

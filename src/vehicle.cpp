@@ -90,6 +90,7 @@ glm::vec4 Vehicle::getUpVector() { return this->upVector; }
 
 void Vehicle::hitObject()
 {
+    //this->acceleration = 0.0;
     this->velocityVector -= this->velocityVector * 1.8f;
 }
 void Vehicle::drift(){

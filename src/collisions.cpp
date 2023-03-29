@@ -1,8 +1,9 @@
 #include "collisions.hpp"
 #include <iostream>
+
 namespace Collisions
 {
-  bool boundingSpheresCollisionTest(glm::vec4 firstObjPosition, float firstObjRadius, glm::vec4 secondObjPosition, float secondObjRadius)
+  bool spheresCollisionTest(glm::vec4 firstObjPosition, float firstObjRadius, glm::vec4 secondObjPosition, float secondObjRadius)
   {
     float distance = glm::length(firstObjPosition - secondObjPosition);
 
@@ -14,12 +15,11 @@ namespace Collisions
     return false;
   }
 
-  bool boundingSphereBoundingBoxCollisionTest(glm::vec4 spherePosition, float sphereRadius, Entity box)
+  bool sphereBoxCollisionTest(glm::vec4 spherePosition, float sphereRadius, Entity box)
   {
-    glm::vec4 bboxMin = glm::vec4(box.getObject().getBboxMin(), 1.0f);
-    glm::vec4 bboxMax = glm::vec4(box.getObject().getBboxMax(), 1.0f);
-    bboxMin = box.getTransformationMatrix() * bboxMin;
-    bboxMax = box.getTransformationMatrix() * bboxMax;
+    glm::vec4 bboxMin = glm::vec4(box.getAABBMin(), 1.0f);
+    glm::vec4 bboxMax = glm::vec4(box.getAABBMax(), 1.0f);
+
 
     glm::vec3 closestPoint;
     closestPoint.x = glm::clamp(spherePosition.x, bboxMin.x, bboxMax.x);

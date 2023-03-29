@@ -40,10 +40,13 @@ class Entity{
         GLfloat getAngleY();
         GLfloat getAngleZ();
         glm::vec3 getScales();
+        void computeAABB();
+        glm::vec3 getAABBMax();
+        glm::vec3 getAABBMin();
 
         SerializedEntity* serialize();
     protected:
-        
+        void populateCorners(glm::vec4 corners[]);
         Model object;
         glm::vec4 position;
         GLfloat angleX;
@@ -52,6 +55,8 @@ class Entity{
         GLfloat scaleX;
         GLfloat scaleY;
         GLfloat scaleZ;
+        glm::vec3 AABBMax;
+        glm::vec3 AABBMin;
 
 
 };

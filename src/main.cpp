@@ -377,25 +377,33 @@ int main(int argc, char *argv[])
         if (tecla_space_pressionada){
             kart.nitro();
         }
+        glm::vec4 previousPos = kart.getPosition();
+        kart.move(delta_t);
 
         for (Entity wall : walls)
         {
-            if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, wall))
+            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, wall)){
+                kart.setPosition(previousPos);
                 kart.hitObject();
+            }
         }
-        if (Collisions::boundingSpheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+        if (Collisions::spheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
             kart.hitObject();
         for (Entity cow : obstacles){
-            if (Collisions::boundingSphereBoundingBoxCollisionTest(kart.getPosition(), 1.0f, cow))
+            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, cow)){
+                kart.setPosition(previousPos);
                 kart.hitObject();
+            }
+
+
         }
-        if (Collisions::boundingSpheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f)){
+        if (Collisions::spheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f)){
             end = (float)glfwGetTime();
             gameWon = true;
             //kart.setPosition(glm::vec4(100.0f,0.0f,0.0f,1.0f));
         }
             
-        kart.move(delta_t);
+        
 
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
