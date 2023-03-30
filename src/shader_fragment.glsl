@@ -6,6 +6,7 @@
 // "shader_vertex.glsl" e "main.cpp".
 in vec4 position_world;
 in vec4 normal;
+in vec4 color_vertex;
 
 // Posição do vértice atual no sistema de coordenadas local do modelo.
 in vec4 position_model;
@@ -102,14 +103,14 @@ void main()
         //use texcoords from obj model
         Kd0 =texture(TextureImage3, texcoords).rgb;
     }
-    else if ( object_id == OUTERWALL ){
+    // else if ( object_id == OUTERWALL ){
 
-        //Computa a cor da textura neste ponto
-        Kd0 = texture(TextureImage4, texcoords*5).rgb;
-        Ks = vec3(0.0,0.0,0.0);
-        Ka = vec3(0.1,0.1,0.1);
-        q = 2.0;
-    }
+    //     //Computa a cor da textura neste ponto
+    //     Kd0 = texture(TextureImage4, texcoords*5).rgb;
+    //     Ks = vec3(0.0,0.0,0.0);
+    //     Ka = vec3(0.1,0.1,0.1);
+    //     q = 2.0;
+    // }
     else if (object_id == INNERWALL){
         float adjustObjectBrightness = 3.0;
         Kd0 = texture(TextureImage6, texcoords*3).rgb * adjustObjectBrightness;
@@ -140,7 +141,6 @@ void main()
         //use texcoords from obj model
         Kd0 =texture(TextureImage8, texcoords).rgb;
     }
-        
     else if ( object_id == PLANE )
     {
         Ks = vec3(0.0,0.0,0.0);
@@ -175,8 +175,13 @@ void main()
     // Espectro da luz ambiente
     vec3 Ia = vec3(0.1,0.1,0.1);
 
-    color.rgb = Kd0 * I *(lambert + 0.01) + Ka*Ia + blinnPhong; 
+    color.rgb = Kd0 * I *(lambert + 0.01) + Ka*Ia + blinnPhong;
     color.a = 1;
-    color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
+    if (object_id == OUTERWALL){
+        color.rgb = pow(color_vertex.rgb, vec3(1.0,1.0,1.0)/2.2);
+    } else{
+        color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
+    }
 }
+
 

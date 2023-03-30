@@ -1,5 +1,13 @@
 #version 330 core
 
+// Identificador que define qual objeto está sendo desenhado no momento
+#define OUTERWALL 3
+uniform int object_id;
+
+// Variáveis para acesso das imagens de textura
+uniform sampler2D TextureImage4;
+
+
 // Atributos de vértice recebidos como entrada ("in") pelo Vertex Shader.
 // Veja a função BuildTrianglesAndAddToVirtualScene() em "main.cpp".
 layout (location = 0) in vec4 model_coefficients;
@@ -19,6 +27,7 @@ out vec4 position_world;
 out vec4 position_model;
 out vec4 normal;
 out vec2 texcoords;
+out vec4 color_vertex;
 
 void main()
 {
@@ -63,5 +72,54 @@ void main()
 
     // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
     texcoords = texture_coefficients;
+
+    if ( object_id == OUTERWALL ){
+        // Obtemos a posição da câmera utilizando a inversa da matriz que define o
+        // sistema de coordenadas da câmera.
+        vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
+        vec4 camera_position = inverse(view) * origin;
+
+        // O fragmento atual é coberto por um ponto que percente à superfície de um
+        // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
+        // sistema de coordenadas global (World coordinates). Esta posição é obtida
+        // através da interpolação, feita pelo rasterizador, da posição de cada
+        // vértice.
+        vec4 p = position_world;
+
+        // Normal do fragmento atual, interpolada pelo rasterizador a partir das
+        // normais de cada vértice.
+        vec4 n = normalize(normal);
+
+        // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
+        vec4 l = normalize(vec4(1.0,1.0,1.0,0.0));
+
+        // Vetor que define o sentido da câmera em relação ao ponto atual.
+        vec4 v = normalize(camera_position - p);
+
+        // Vetor que define o sentido da reflexão especular ideal.
+        vec4 r = -l + 2 * n * dot(n,l);
+
+        //Computa a cor da textura neste ponto
+        vec3 Kd0 = texture(TextureImage4, texcoords*5).rgb;
+        vec3 Ks = vec3(0.0,0.0,0.0);
+        vec3 Ka = vec3(0.1,0.1,0.1);
+        float q = 2.0;
+
+        // Espectro da fonte de iluminação
+        vec3 I = vec3(1.0,1.0,1.0);
+
+        // Equação de Iluminação
+        float lambert = max(0,dot(n,l));
+        vec4 h = l + v;
+        h = h/length(h);
+
+        vec3 blinnPhong =  Ks*I*pow(max(0,dot(n,h)),q);
+
+        // Espectro da luz ambiente
+        vec3 Ia = vec3(0.1,0.1,0.1);
+
+        color_vertex.rgb = Kd0 * I *(lambert + 0.01) + Ka*Ia + blinnPhong;
+        color_vertex.a = 1;
+    }
 }
 

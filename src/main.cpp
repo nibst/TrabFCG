@@ -108,9 +108,8 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 void writeEntities(std::ostream &os, const std::vector<SerializedEntity> &vec);
 std::vector<SerializedEntity> readEntities(std::istream &inputStream);
 
-
-void writeEntities(std::ostream& os, const std::vector<SerializedEntity> &vec);
-std::vector<SerializedEntity> readEntities(std::istream& inputStream);
+void writeEntities(std::ostream &os, const std::vector<SerializedEntity> &vec);
+std::vector<SerializedEntity> readEntities(std::istream &inputStream);
 void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, GLuint wallVAO, GLuint g_GpuProgramID);
 
 GLuint buildVisualizationOfBbox(Model model);
@@ -141,7 +140,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
 float g_CameraTheta = 0.0f;    // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 1.0f;      // Ângulo em relação ao eixo Y
+float g_CameraPhi = 1.15f;     // Ângulo em relação ao eixo Y'
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
@@ -159,7 +158,7 @@ bool g_UsePerspectiveProjection = true;
 bool g_ShowInfoText = true;
 
 bool tecla_A_pressionada = false, tecla_D_pressionada = false, tecla_S_pressionada = false,
-     tecla_W_pressionada = false, tecla_space_pressionada = false, tecla_J_pressionada = false , tecla_ctrl_pressionada = false;
+     tecla_W_pressionada = false, tecla_space_pressionada = false, tecla_J_pressionada = false, tecla_ctrl_pressionada = false;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 Camera *camera = new Camera();
@@ -232,9 +231,9 @@ int main(int argc, char *argv[])
 
     Vehicle kart = Vehicle(kartmodel);
     camera = (LookAtCamera *)new LookAtCamera(&kart);
-    //glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
-    //front = front * 0.2f;
-    //kart.setFrontVector(front);
+    // glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
+    // front = front * 0.2f;
+    // kart.setFrontVector(front);
 
     Model wallmodel;
     wallmodel.loadFromOBJFileName("../../data/wall.obj");
@@ -247,36 +246,37 @@ int main(int argc, char *argv[])
     cowmodel.setObjectID(COW);
     models[COW] = cowmodel;
 
-
     Model finishmodel;
     finishmodel.loadFromOBJFileName("../../data/uploads_files_3661170_gate.obj");
     finishmodel.setObjectID(FINISH);
     models[FINISH] = finishmodel;
-    Entity finishLine = Entity(models[FINISH],glm::vec4(24.588949,-1.000000,50.209194,1.0),0.0,0.0,0.0,2.0,1.0,2.0);
+    Entity finishLine = Entity(models[FINISH], glm::vec4(24.588949, -1.000000, 50.209194, 1.0), 0.0, 0.0, 0.0, 2.0, 1.0, 2.0);
 
     AnimatedEntity movingCow = AnimatedEntity(cowmodel);
-    movingCow.scale(2.0,2.0,2.0);
-    //get all walls for rendering
+    movingCow.scale(2.0, 2.0, 2.0);
+    // get all walls for rendering
     std::ifstream inWalls("../../wallMap.bin", std::ios::in | std::ios::binary);
     std::vector<SerializedEntity> allSerializedWalls = readEntities(inWalls);
     inWalls.close();
-    //get all obstacles for rendering
+    // get all obstacles for rendering
     std::ifstream inObstacles("../../obstaclesMap.bin", std::ios::in | std::ios::binary);
     std::vector<SerializedEntity> allSerializedCows = readEntities(inObstacles);
     inObstacles.close();
-    
+
     std::vector<Entity> walls;
-    for (SerializedEntity serialized : allSerializedWalls){
-        Entity entity = Entity(serialized,models);
-        //printf("%d\n",entity.getObject().getID());
+    for (SerializedEntity serialized : allSerializedWalls)
+    {
+        Entity entity = Entity(serialized, models);
+        // printf("%d\n",entity.getObject().getID());
         walls.push_back(entity);
     }
     std::vector<Entity> obstacles;
-    for (SerializedEntity serialized : allSerializedCows){
-        Entity entity = Entity(serialized,models);
-        //printf("%d\n",entity.getObject().getID());
+    for (SerializedEntity serialized : allSerializedCows)
+    {
+        Entity entity = Entity(serialized, models);
+        // printf("%d\n",entity.getObject().getID());
         obstacles.push_back(entity);
-    }    
+    }
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -370,11 +370,13 @@ int main(int argc, char *argv[])
             // kart.increasePosition(v.x,v.y,v.z);
             // camera->moveFoward(delta_t);
         }
-        if (tecla_ctrl_pressionada){
+        if (tecla_ctrl_pressionada)
+        {
             kart.drift();
         }
-        
-        if (tecla_space_pressionada){
+
+        if (tecla_space_pressionada)
+        {
             kart.nitro();
         }
         glm::vec4 previousPos = kart.getPosition();
@@ -382,48 +384,48 @@ int main(int argc, char *argv[])
 
         for (Entity wall : walls)
         {
-            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, wall)){
+            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, wall))
+            {
                 kart.setPosition(previousPos);
                 kart.hitObject();
             }
         }
         if (Collisions::spheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
             kart.hitObject();
-        for (Entity cow : obstacles){
-            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, cow)){
+        for (Entity cow : obstacles)
+        {
+            if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, cow))
+            {
                 kart.setPosition(previousPos);
                 kart.hitObject();
             }
-
-
         }
-        if (Collisions::spheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f)){
+        if (Collisions::spheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+        {
             end = (float)glfwGetTime();
             gameWon = true;
-            //kart.setPosition(glm::vec4(100.0f,0.0f,0.0f,1.0f));
+            // kart.setPosition(glm::vec4(100.0f,0.0f,0.0f,1.0f));
         }
-            
-        
 
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
-        
 
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
         kart.resetModifications();
         movingCow.move(delta_t);
-    
-        if (gameWon){
-            TextRendering_PrintString(window,"TIME:  ",0.1f - (18 + 1) * charwidth, 0.5f - lineheight, 4.0f);
+
+        if (gameWon)
+        {
+            TextRendering_PrintString(window, "TIME:  ", 0.1f - (18 + 1) * charwidth, 0.5f - lineheight, 4.0f);
             float totalTime = end - start;
-            TextRendering_PrintString(window,std::to_string(totalTime),0.4f - (10 + 1) * charwidth, 0.5f - lineheight, 4.0f);
-            if(tecla_J_pressionada){
+            TextRendering_PrintString(window, std::to_string(totalTime), 0.4f - (10 + 1) * charwidth, 0.5f - lineheight, 4.0f);
+            if (tecla_J_pressionada)
+            {
                 start = (float)glfwGetTime();
                 kart = Vehicle(models[KART]);
                 gameWon = false;
             }
-
         }
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
@@ -444,29 +446,30 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(renderer.g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
         // Desenhamos o modelo do coelho;
-        if (!gameWon){
+        if (!gameWon)
+        {
             renderer.render(kart.getObject(), kart.getTransformationMatrix());
             renderer.render(movingCow.getObject(), movingCow.getTransformationMatrix());
-            renderer.render(finishLine.getObject(),finishLine.getTransformationMatrix());
+            renderer.render(finishLine.getObject(), finishLine.getTransformationMatrix());
             // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
             // arquivo "shader_vertex.glsl", onde esta é efetivamente
             // aplicada em todos os pontos.
 
-            for (Entity wall : walls){
+            for (Entity wall : walls)
+            {
                 renderer.render(wall.getObject(), wall.getTransformationMatrix());
             }
-            for (Entity obstacle : obstacles){
+            for (Entity obstacle : obstacles)
+            {
                 renderer.render(obstacle.getObject(), obstacle.getTransformationMatrix());
             }
             model = Matrix_Translate(0.0f, -1.1f, 0.0f);
             renderer.render(terrainmodel, model);
-            TextRendering_PrintString(window,"speed: ",0.1f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
-            TextRendering_PrintString(window,std::to_string(kart.getSpeed()),0.2f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
-            TextRendering_PrintString(window,"nitro: ",0.8f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
-            TextRendering_PrintString(window,std::to_string(kart.getNitroFuel()),0.9f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window, "speed: ", 0.1f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window, std::to_string(kart.getSpeed()), 0.2f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window, "nitro: ", 0.8f - (18 + 1) * charwidth, 1.0f - lineheight, 2.0f);
+            TextRendering_PrintString(window, std::to_string(kart.getNitroFuel()), 0.9f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
         }
-
-        
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -491,8 +494,6 @@ int main(int argc, char *argv[])
     writeEntities(out,allSerializedObstacles);
     out.close();
     */
-    
-    
 
     free(camera);
     // Finalizamos o uso dos recursos do sistema operacional
@@ -1092,7 +1093,7 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         if (key == GLFW_KEY_0 + i && action == GLFW_PRESS && mod == GLFW_MOD_SHIFT)
             std::exit(100 + i);
     // =================
-    
+
     // Se o usuário pressionar a tecla ESC, fechamos a janela.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
@@ -1208,7 +1209,8 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         else if (action == GLFW_REPEAT)
             ;
     }
-    if (key == GLFW_KEY_LEFT_CONTROL){
+    if (key == GLFW_KEY_LEFT_CONTROL)
+    {
         if (action == GLFW_PRESS)
             tecla_ctrl_pressionada = true;
 
@@ -1555,32 +1557,33 @@ std::vector<SerializedEntity> readEntities(std::istream &inputStream)
     inputStream.read((char *)&allSerialized[0], allSerialized.size() * sizeof(SerializedEntity));
     return allSerialized;
 }
-GLuint buildVisualizationOfBbox(Model model){
-    glm::vec4 boundingBoxMax = glm::vec4(model.getBboxMax(),1.0);
-    glm::vec4 boundingBoxMin = glm::vec4(model.getBboxMin(),1.0);
-    //boundingBoxMax = entity.getTransformationMatrix() * boundingBoxMax;
-    //boundingBoxMin = entity.getTransformationMatrix() * boundingBoxMin;
+GLuint buildVisualizationOfBbox(Model model)
+{
+    glm::vec4 boundingBoxMax = glm::vec4(model.getBboxMax(), 1.0);
+    glm::vec4 boundingBoxMin = glm::vec4(model.getBboxMin(), 1.0);
+    // boundingBoxMax = entity.getTransformationMatrix() * boundingBoxMax;
+    // boundingBoxMin = entity.getTransformationMatrix() * boundingBoxMin;
 
     GLfloat model_coefficients[] = {
-        //4 linhas o suficiente para mostrar o bounding box i guess
-        
-    //       X                 Y                    Z             W
-        boundingBoxMax.x,  boundingBoxMax.y,  boundingBoxMax.z, 1.0f, // posição do vértice 0
+        // 4 linhas o suficiente para mostrar o bounding box i guess
 
-        boundingBoxMin.x,  boundingBoxMax.y,  boundingBoxMax.z, 1.0f, // posição do vértice 1
-    //       X                 Y                    Z             W
-        boundingBoxMax.x,  boundingBoxMin.y,  boundingBoxMax.z, 1.0f, // posição do vértice 2
+        //       X                 Y                    Z             W
+        boundingBoxMax.x, boundingBoxMax.y, boundingBoxMax.z, 1.0f, // posição do vértice 0
 
-        boundingBoxMax.x,  boundingBoxMax.y,  boundingBoxMin.z, 1.0f, // posição do vértice 3
+        boundingBoxMin.x, boundingBoxMax.y, boundingBoxMax.z, 1.0f, // posição do vértice 1
+                                                                    //       X                 Y                    Z             W
+        boundingBoxMax.x, boundingBoxMin.y, boundingBoxMax.z, 1.0f, // posição do vértice 2
 
-    //       X                 Y                    Z             W
-        boundingBoxMin.x,  boundingBoxMin.y,  boundingBoxMin.z, 1.0f, // posição do vértice 4
-    //       X                 Y                    Z             W
-        boundingBoxMax.x,  boundingBoxMin.y,  boundingBoxMin.z, 1.0f, // posição do vértice 5
+        boundingBoxMax.x, boundingBoxMax.y, boundingBoxMin.z, 1.0f, // posição do vértice 3
 
-        boundingBoxMin.x,  boundingBoxMax.y,  boundingBoxMin.z, 1.0f, // posição do vértice 6
+        //       X                 Y                    Z             W
+        boundingBoxMin.x, boundingBoxMin.y, boundingBoxMin.z, 1.0f, // posição do vértice 4
+                                                                    //       X                 Y                    Z             W
+        boundingBoxMax.x, boundingBoxMin.y, boundingBoxMin.z, 1.0f, // posição do vértice 5
 
-        boundingBoxMin.x,  boundingBoxMin.y,  boundingBoxMax.z, 1.0f // posição do vértice 7
+        boundingBoxMin.x, boundingBoxMax.y, boundingBoxMin.z, 1.0f, // posição do vértice 6
+
+        boundingBoxMin.x, boundingBoxMin.y, boundingBoxMax.z, 1.0f // posição do vértice 7
     };
     // Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
     // um buffer de memória que irá conter os valores de um certo atributo de
@@ -1637,8 +1640,8 @@ GLuint buildVisualizationOfBbox(Model model){
     // Esta função também informa que o VBO "ligado" acima em glBindBuffer()
     // está dentro do VAO "ligado" acima por glBindVertexArray().
     // Veja https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Buffer_Object
-    GLuint location = 0; // "(location = 0)" em "shader_vertex.glsl"
-    GLint  number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+    GLuint location = 0;            // "(location = 0)" em "shader_vertex.glsl"
+    GLint number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
     glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
 
     // "Ativamos" os atributos. Informamos que os atributos com índice de local
@@ -1670,7 +1673,7 @@ GLuint buildVisualizationOfBbox(Model model){
     glBindBuffer(GL_ARRAY_BUFFER, VBO_color_coefficients_id);
     glBufferData(GL_ARRAY_BUFFER, sizeof(color_coefficients), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(color_coefficients), color_coefficients);
-    location = 1; // "(location = 1)" em "shader_vertex.glsl"
+    location = 1;             // "(location = 1)" em "shader_vertex.glsl"
     number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
     glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(location);
@@ -1684,15 +1687,15 @@ GLuint buildVisualizationOfBbox(Model model){
     // Este vetor "indices" define a TOPOLOGIA (veja slides 103-110 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
     //
     GLuint indices[] = {
-    // Definimos os índices dos vértices que definem as ARESTAS de um cubo
-    // através de 6 linhas que serão desenhadas com o modo de renderização
-    // GL_LINES.
-        0, 1, // linha 1 
-        0, 2, // linha 2 
-        0, 3, // linha 3 
-        4, 5, // linha 4 
-        4, 6, // linha 5 
-        4, 7, // linha 6 
+        // Definimos os índices dos vértices que definem as ARESTAS de um cubo
+        // através de 6 linhas que serão desenhadas com o modo de renderização
+        // GL_LINES.
+        0, 1, // linha 1
+        0, 2, // linha 2
+        0, 3, // linha 3
+        4, 5, // linha 4
+        4, 6, // linha 5
+        4, 7, // linha 6
     };
     // Criamos um buffer OpenGL para armazenar os índices acima
     GLuint indices_id;
@@ -1723,36 +1726,32 @@ GLuint buildVisualizationOfBbox(Model model){
     return vertex_array_object_id;
 }
 
-
-void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, GLuint wallVAO, GLuint g_GpuProgramID){
-        int numberOfWalls = walls.size();
-        for (int i = 0; i < numberOfWalls; i++){
-            glLineWidth(10);
-            GLint model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
-            glBindVertexArray(wallVAO);
-            glm::mat4 modelA = walls[i].getTransformationMatrix();
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelA));
-            glDrawElements(
-                GL_LINES,
-                12,
-                GL_UNSIGNED_INT,
-                (void*)0
-                );
-            glBindVertexArray(0);
-
-        }
-
-        
+void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, GLuint wallVAO, GLuint g_GpuProgramID)
+{
+    int numberOfWalls = walls.size();
+    for (int i = 0; i < numberOfWalls; i++)
+    {
+        glLineWidth(10);
         GLint model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
-        glBindVertexArray(kartVAO);
-        glm::mat4 modelB = kart.getTransformationMatrix();
-        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelB));
+        glBindVertexArray(wallVAO);
+        glm::mat4 modelA = walls[i].getTransformationMatrix();
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelA));
         glDrawElements(
             GL_LINES,
             12,
             GL_UNSIGNED_INT,
-            (void*)0
-            );
+            (void *)0);
         glBindVertexArray(0);
-    
+    }
+
+    GLint model_uniform = glGetUniformLocation(g_GpuProgramID, "model");
+    glBindVertexArray(kartVAO);
+    glm::mat4 modelB = kart.getTransformationMatrix();
+    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(modelB));
+    glDrawElements(
+        GL_LINES,
+        12,
+        GL_UNSIGNED_INT,
+        (void *)0);
+    glBindVertexArray(0);
 }
