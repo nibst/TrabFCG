@@ -17,13 +17,7 @@ class Camera{
         Camera(glm::vec4 position_c, glm::vec4 view_vector, glm::vec4 up_vector);
         glm::mat4 getViewMatrix();
         glm::mat4 getPerspectiveMatrix();
-        virtual void rotate(float dphi,float dtheta);
-        void moveRight(float delta_time);
-        void moveLeft(float delta_time);
-        void moveFoward(float delta_time);
-        void moveBackward(float delta_time);
-        void moveUp(float delta_time);
-        void moveDown(float delta_time);
+        void rotate(float dphi,float dtheta);
         void setCenterPosition(glm::vec4 position);
         glm::vec4 getCenterPosition();
         void setScreenRatio(float screenRatio);

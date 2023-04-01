@@ -59,21 +59,12 @@
 #include "lookAtCamera.hpp"
 #include "animatedEntity.hpp"
 #include "collisions.hpp"
-
-// Declaração de funções utilizadas para pilha de matrizes de modelagem.
-void PushMatrix(glm::mat4 M);
-void PopMatrix(glm::mat4 &M);
+#include "freeCamera.hpp"
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
-void BuildTrianglesAndAddToVirtualScene(ObjModel *);                         // Constrói representação de um ObjModel como malha de triângulos para renderização
-void ComputeNormals(ObjModel *model);                                        // Computa normais de um ObjModel, caso não existam.
-void LoadShadersFromFiles();                                                 // Carrega os shaders de vértice e fragmento, criando um programa de GPU
 void LoadTextureImage(const char *filename);                                 // Função que carrega imagens de textura
-void DrawVirtualObject(const char *object_name);                             // Desenha um objeto armazenado em g_VirtualScene
-GLuint LoadShader_Vertex(const char *filename);                              // Carrega um vertex shader
-GLuint LoadShader_Fragment(const char *filename);                            // Carrega um fragment shader
-void LoadShader(const char *filename, GLuint shader_id);                     // Função utilizada pelas duas acima
+
 GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id); // Cria um programa de GPU
 void PrintObjModelInfo(ObjModel *);                                          // Função para debugging
 
@@ -115,14 +106,6 @@ void showCollisionBoxes(std::vector<Entity> walls, Entity kart, GLuint kartVAO, 
 GLuint buildVisualizationOfBbox(Model model);
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
-// A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
-// (map).  Veja dentro da função BuildTrianglesAndAddToVirtualScene() como que são incluídos
-// objetos dentro da variável g_VirtualScene, e veja na função main() como
-// estes são acessados.
-std::map<std::string, Model> g_VirtualScene;
-
-// Pilha que guardará as matrizes de modelagem.
-std::stack<glm::mat4> g_MatrixStack;
 
 // Ângulos de Euler que controlam a rotação de um dos cubos da cena virtual
 float g_AngleX = 0.0f;
@@ -133,7 +116,6 @@ float g_AngleZ = 0.0f;
 // pressionado no momento atual. Veja função MouseButtonCallback().
 bool g_LeftMouseButtonPressed = false;
 bool g_RightMouseButtonPressed = false;  // Análogo para botão direito do mouse
-bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mouse
 
 // Variáveis que definem a câmera em coordenadas esféricas, controladas pelo
 // usuário através do mouse (veja função CursorPosCallback()). A posição
@@ -143,17 +125,10 @@ float g_CameraTheta = 0.0f;    // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 1.15f;     // Ângulo em relação ao eixo Y'
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
-// Variáveis que controlam rotação do antebraço
-float g_ForearmAngleZ = 0.0f;
-float g_ForearmAngleX = 0.0f;
-
-// Variáveis que controlam translação do torso
-float g_TorsoPositionX = 0.0f;
-float g_TorsoPositionY = 0.0f;
 
 // Variável que controla o tipo de projeção utilizada: perspectiva ou ortográfica.
 bool g_UsePerspectiveProjection = true;
-
+bool g_UseFreeCamera = false;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
@@ -230,7 +205,9 @@ int main(int argc, char *argv[])
     models[KART] = kartmodel;
 
     Vehicle kart = Vehicle(kartmodel);
-    camera = (LookAtCamera *)new LookAtCamera(&kart);
+    Camera *lookAtCamera = (LookAtCamera *)new LookAtCamera(&kart);
+    Camera *freeCamera = (FreeCamera *)new FreeCamera(kart.getPosition());
+    camera = lookAtCamera;
     // glm::vec4 front = glm::vec4(-5.32, 0.0, 8.46, 0.0);
     // front = front * 0.2f;
     // kart.setFrontVector(front);
@@ -276,11 +253,6 @@ int main(int argc, char *argv[])
         Entity entity = Entity(serialized, models);
         // printf("%d\n",entity.getObject().getID());
         obstacles.push_back(entity);
-    }
-    if (argc > 1)
-    {
-        ObjModel model(argv[1]);
-        BuildTrianglesAndAddToVirtualScene(&model);
     }
 
     // Inicializamos o código para renderização de texto.
@@ -331,57 +303,27 @@ int main(int argc, char *argv[])
         prev_time = current_time;
         glm::vec4 v;
         // Realiza movimentação de objetos
-        if (tecla_D_pressionada)
-        {
-            // Movimenta câmera para direita
-            // v = (u * camera->speed * delta_t);
-            // kart.increasePosition(v.x,v.y,v.z);
-            // camera->moveRight(delta_t);
+        if (tecla_D_pressionada){
             kart.setTurnDirection(Turn::right);
         }
-
-        // Realiza movimentação de objetos
-        if (tecla_S_pressionada)
-        {
-            // Movimenta câmera para tras
-            // v = ((glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+        if (tecla_S_pressionada){
             kart.setGear(CarGear::reverse);
-            // kart.increasePosition(v.x,v.y,v.z);
-            // camera->moveBackward(delta_t);
         }
-
-        // Realiza movimentação de objetos
-        if (tecla_A_pressionada)
-        {
-            // Movimenta câmera para esquerda
-            // v =((-u) * camera->speed * delta_t);
-            // kart.increasePosition(v.x,v.y,v.z);
-            // camera->moveLeft(delta_t);
+        if (tecla_A_pressionada){
             kart.setTurnDirection(Turn::left);
-            // kart.setGear(CarGear::rest);
         }
-
-        // Realiza movimentação de objetos
-        if (tecla_W_pressionada)
-        {
-            // Movimenta câmera para frente
-            // v =(-(glm::vec4(w.x,0.0f,w.z,w.w)) * camera->speed * delta_t);
+        if (tecla_W_pressionada){
             kart.setGear(CarGear::forward);
-            // kart.increasePosition(v.x,v.y,v.z);
-            // camera->moveFoward(delta_t);
         }
-        if (tecla_ctrl_pressionada)
-        {
+        if (tecla_ctrl_pressionada){
             kart.drift();
         }
-
-        if (tecla_space_pressionada)
-        {
+        if (tecla_space_pressionada){
             kart.nitro();
         }
         glm::vec4 previousPos = kart.getPosition();
         kart.move(delta_t);
-
+        //Colisoes com parede
         for (Entity wall : walls)
         {
             if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, wall))
@@ -390,8 +332,13 @@ int main(int argc, char *argv[])
                 kart.hitObject();
             }
         }
-        if (Collisions::spheresCollisionTest(movingCow.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+        //colisao com a vaca que se move
+        if (Collisions::spheresCollisionTest(movingCow.getPosition(), 1.2f, kart.getPosition(), 1.0f)){
+            kart.setPosition(previousPos);
             kart.hitObject();
+
+        }
+        //colisao com todas outras vacas
         for (Entity cow : obstacles)
         {
             if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, cow))
@@ -400,7 +347,8 @@ int main(int argc, char *argv[])
                 kart.hitObject();
             }
         }
-        if (Collisions::spheresCollisionTest(finishLine.getPosition(), 1.0f, kart.getPosition(), 1.0f))
+        //colisao com linha de chegada
+        if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, finishLine))
         {
             end = (float)glfwGetTime();
             gameWon = true;
@@ -409,7 +357,14 @@ int main(int argc, char *argv[])
 
         float lineheight = TextRendering_LineHeight(window);
         float charwidth = TextRendering_CharWidth(window);
+        if (g_UseFreeCamera){
 
+            camera  = freeCamera;
+            camera->setCenterPosition(kart.getPosition()+glm::vec4(0.0,1.0,0.0,0.0));
+        }
+        else{
+            camera  = lookAtCamera;
+        }
         camera->rotate(g_CameraPhi, g_CameraTheta);
         camera->move();
         kart.resetModifications();
@@ -555,325 +510,6 @@ void LoadTextureImage(const char *filename)
     g_NumLoadedTextures += 1;
 }
 
-// Função que pega a matriz M e guarda a mesma no topo da pilha
-void PushMatrix(glm::mat4 M)
-{
-    g_MatrixStack.push(M);
-}
-
-// Função que remove a matriz atualmente no topo da pilha e armazena a mesma na variável M
-void PopMatrix(glm::mat4 &M)
-{
-    if (g_MatrixStack.empty())
-    {
-        M = Matrix_Identity();
-    }
-    else
-    {
-        M = g_MatrixStack.top();
-        g_MatrixStack.pop();
-    }
-}
-
-// Função que computa as normais de um ObjModel, caso elas não tenham sido
-// especificadas dentro do arquivo ".obj"
-void ComputeNormals(ObjModel *model)
-{
-    if (!model->attrib.normals.empty())
-        return;
-
-    // Primeiro computamos as normais para todos os TRIÂNGULOS.
-    // Segundo, computamos as normais dos VÉRTICES através do método proposto
-    // por Gouraud, onde a normal de cada vértice vai ser a média das normais de
-    // todas as faces que compartilham este vértice.
-
-    size_t num_vertices = model->attrib.vertices.size() / 3;
-
-    std::vector<int> num_triangles_per_vertex(num_vertices, 0);
-    std::vector<glm::vec4> vertex_normals(num_vertices, glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-    for (size_t shape = 0; shape < model->shapes.size(); ++shape)
-    {
-        size_t num_triangles = model->shapes[shape].mesh.num_face_vertices.size();
-
-        for (size_t triangle = 0; triangle < num_triangles; ++triangle)
-        {
-            assert(model->shapes[shape].mesh.num_face_vertices[triangle] == 3);
-
-            glm::vec4 vertices[3];
-            for (size_t vertex = 0; vertex < 3; ++vertex)
-            {
-                tinyobj::index_t idx = model->shapes[shape].mesh.indices[3 * triangle + vertex];
-                const float vx = model->attrib.vertices[3 * idx.vertex_index + 0];
-                const float vy = model->attrib.vertices[3 * idx.vertex_index + 1];
-                const float vz = model->attrib.vertices[3 * idx.vertex_index + 2];
-                vertices[vertex] = glm::vec4(vx, vy, vz, 1.0);
-            }
-
-            const glm::vec4 a = vertices[0];
-            const glm::vec4 b = vertices[1];
-            const glm::vec4 c = vertices[2];
-
-            const glm::vec4 n = crossproduct(b - a, c - a);
-
-            for (size_t vertex = 0; vertex < 3; ++vertex)
-            {
-                tinyobj::index_t idx = model->shapes[shape].mesh.indices[3 * triangle + vertex];
-                num_triangles_per_vertex[idx.vertex_index] += 1;
-                vertex_normals[idx.vertex_index] += n;
-                model->shapes[shape].mesh.indices[3 * triangle + vertex].normal_index = idx.vertex_index;
-            }
-        }
-    }
-
-    model->attrib.normals.resize(3 * num_vertices);
-
-    for (size_t i = 0; i < vertex_normals.size(); ++i)
-    {
-        glm::vec4 n = vertex_normals[i] / (float)num_triangles_per_vertex[i];
-        n /= norm(n);
-        model->attrib.normals[3 * i + 0] = n.x;
-        model->attrib.normals[3 * i + 1] = n.y;
-        model->attrib.normals[3 * i + 2] = n.z;
-    }
-}
-
-// Constrói triângulos para futura renderização a partir de um ObjModel.
-void BuildTrianglesAndAddToVirtualScene(ObjModel *model)
-{
-    VAO *vao = new VAO();
-    vao->bind();
-
-    std::vector<GLuint> indices;
-    std::vector<float> model_coefficients;
-    std::vector<float> normal_coefficients;
-    std::vector<float> texture_coefficients;
-    for (size_t shape = 0; shape < model->shapes.size(); ++shape)
-    {
-        size_t first_index = indices.size();
-        size_t num_triangles = model->shapes[shape].mesh.num_face_vertices.size();
-        const float minval = std::numeric_limits<float>::min();
-        const float maxval = std::numeric_limits<float>::max();
-
-        glm::vec3 bbox_min = glm::vec3(maxval, maxval, maxval);
-        glm::vec3 bbox_max = glm::vec3(minval, minval, minval);
-
-        for (size_t triangle = 0; triangle < num_triangles; ++triangle)
-        {
-            assert(model->shapes[shape].mesh.num_face_vertices[triangle] == 3);
-
-            for (size_t vertex = 0; vertex < 3; ++vertex)
-            {
-                tinyobj::index_t idx = model->shapes[shape].mesh.indices[3 * triangle + vertex];
-
-                indices.push_back(first_index + 3 * triangle + vertex);
-
-                const float vx = model->attrib.vertices[3 * idx.vertex_index + 0];
-                const float vy = model->attrib.vertices[3 * idx.vertex_index + 1];
-                const float vz = model->attrib.vertices[3 * idx.vertex_index + 2];
-                // printf("tri %d vert %d = (%.2f, %.2f, %.2f)\n", (int)triangle, (int)vertex, vx, vy, vz);
-                model_coefficients.push_back(vx);   // X
-                model_coefficients.push_back(vy);   // Y
-                model_coefficients.push_back(vz);   // Z
-                model_coefficients.push_back(1.0f); // W
-
-                bbox_min.x = std::min(bbox_min.x, vx);
-                bbox_min.y = std::min(bbox_min.y, vy);
-                bbox_min.z = std::min(bbox_min.z, vz);
-                bbox_max.x = std::max(bbox_max.x, vx);
-                bbox_max.y = std::max(bbox_max.y, vy);
-                bbox_max.z = std::max(bbox_max.z, vz);
-
-                // Inspecionando o código da tinyobjloader, o aluno Bernardo
-                // Sulzbach (2017/1) apontou que a maneira correta de testar se
-                // existem normais e coordenadas de textura no ObjModel é
-                // comparando se o índice retornado é -1. Fazemos isso abaixo.
-
-                if (idx.normal_index != -1)
-                {
-                    const float nx = model->attrib.normals[3 * idx.normal_index + 0];
-                    const float ny = model->attrib.normals[3 * idx.normal_index + 1];
-                    const float nz = model->attrib.normals[3 * idx.normal_index + 2];
-                    normal_coefficients.push_back(nx);   // X
-                    normal_coefficients.push_back(ny);   // Y
-                    normal_coefficients.push_back(nz);   // Z
-                    normal_coefficients.push_back(0.0f); // W
-                }
-
-                if (idx.texcoord_index != -1)
-                {
-                    const float u = model->attrib.texcoords[2 * idx.texcoord_index + 0];
-                    const float v = model->attrib.texcoords[2 * idx.texcoord_index + 1];
-                    texture_coefficients.push_back(u);
-                    texture_coefficients.push_back(v);
-                }
-            }
-        }
-
-        size_t last_index = indices.size() - 1;
-
-        Model theobject;
-        theobject = Model(model->shapes[shape].name, first_index, last_index - first_index + 1, GL_TRIANGLES, *vao, bbox_min, bbox_max);
-
-        g_VirtualScene[model->shapes[shape].name] = theobject;
-    }
-
-    GLuint VBO_model_coefficients_id;
-    glGenBuffers(1, &VBO_model_coefficients_id);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
-    glBufferData(GL_ARRAY_BUFFER, model_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, model_coefficients.size() * sizeof(float), model_coefficients.data());
-    GLuint location = 0;            // "(location = 0)" em "shader_vertex.glsl"
-    GLint number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
-    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(location);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    if (!normal_coefficients.empty())
-    {
-        GLuint VBO_normal_coefficients_id;
-        glGenBuffers(1, &VBO_normal_coefficients_id);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_normal_coefficients_id);
-        glBufferData(GL_ARRAY_BUFFER, normal_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, normal_coefficients.size() * sizeof(float), normal_coefficients.data());
-        location = 1;             // "(location = 1)" em "shader_vertex.glsl"
-        number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
-        glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(location);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    if (!texture_coefficients.empty())
-    {
-        GLuint VBO_texture_coefficients_id;
-        glGenBuffers(1, &VBO_texture_coefficients_id);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_texture_coefficients_id);
-        glBufferData(GL_ARRAY_BUFFER, texture_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, texture_coefficients.size() * sizeof(float), texture_coefficients.data());
-
-        location = 2;             // "(location = 1)" em "shader_vertex.glsl"
-        number_of_dimensions = 2; // vec2 em "shader_vertex.glsl"
-        glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(location);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    GLuint indices_id;
-    glGenBuffers(1, &indices_id);
-
-    // "Ligamos" o buffer. Note que o tipo agora é GL_ELEMENT_ARRAY_BUFFER.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(GLuint), indices.data());
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // XXX Errado!
-    //
-
-    // "Desligamos" o VAO, evitando assim que operações posteriores venham a
-    // alterar o mesmo. Isso evita bugs.
-    vao->unbind();
-}
-
-// Carrega um Vertex Shader de um arquivo GLSL. Veja definição de LoadShader() abaixo.
-GLuint LoadShader_Vertex(const char *filename)
-{
-    // Criamos um identificador (ID) para este shader, informando que o mesmo
-    // será aplicado nos vértices.
-    GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
-
-    // Carregamos e compilamos o shader
-    LoadShader(filename, vertex_shader_id);
-
-    // Retorna o ID gerado acima
-    return vertex_shader_id;
-}
-
-// Carrega um Fragment Shader de um arquivo GLSL . Veja definição de LoadShader() abaixo.
-GLuint LoadShader_Fragment(const char *filename)
-{
-    // Criamos um identificador (ID) para este shader, informando que o mesmo
-    // será aplicado nos fragmentos.
-    GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
-
-    // Carregamos e compilamos o shader
-    LoadShader(filename, fragment_shader_id);
-
-    // Retorna o ID gerado acima
-    return fragment_shader_id;
-}
-
-// Função auxilar, utilizada pelas duas funções acima. Carrega código de GPU de
-// um arquivo GLSL e faz sua compilação.
-void LoadShader(const char *filename, GLuint shader_id)
-{
-    // Lemos o arquivo de texto indicado pela variável "filename"
-    // e colocamos seu conteúdo em memória, apontado pela variável
-    // "shader_string".
-    std::ifstream file;
-    try
-    {
-        file.exceptions(std::ifstream::failbit);
-        file.open(filename);
-    }
-    catch (std::exception &e)
-    {
-        fprintf(stderr, "ERROR: Cannot open file \"%s\".\n", filename);
-        std::exit(EXIT_FAILURE);
-    }
-    std::stringstream shader;
-    shader << file.rdbuf();
-    std::string str = shader.str();
-    const GLchar *shader_string = str.c_str();
-    const GLint shader_string_length = static_cast<GLint>(str.length());
-
-    // Define o código do shader GLSL, contido na string "shader_string"
-    glShaderSource(shader_id, 1, &shader_string, &shader_string_length);
-
-    // Compila o código do shader GLSL (em tempo de execução)
-    glCompileShader(shader_id);
-
-    // Verificamos se ocorreu algum erro ou "warning" durante a compilação
-    GLint compiled_ok;
-    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compiled_ok);
-
-    GLint log_length = 0;
-    glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &log_length);
-
-    // Alocamos memória para guardar o log de compilação.
-    // A chamada "new" em C++ é equivalente ao "malloc()" do C.
-    GLchar *log = new GLchar[log_length];
-    glGetShaderInfoLog(shader_id, log_length, &log_length, log);
-
-    // Imprime no terminal qualquer erro ou "warning" de compilação
-    if (log_length != 0)
-    {
-        std::string output;
-
-        if (!compiled_ok)
-        {
-            output += "ERROR: OpenGL compilation of \"";
-            output += filename;
-            output += "\" failed.\n";
-            output += "== Start of compilation log\n";
-            output += log;
-            output += "== End of compilation log\n";
-        }
-        else
-        {
-            output += "WARNING: OpenGL compilation of \"";
-            output += filename;
-            output += "\".\n";
-            output += "== Start of compilation log\n";
-            output += log;
-            output += "== End of compilation log\n";
-        }
-
-        fprintf(stderr, "%s", output.c_str());
-    }
-
-    // A chamada "delete" em C++ é equivalente ao "free()" do C
-    delete[] log;
-}
-
 // Esta função cria um programa de GPU, o qual contém obrigatoriamente um
 // Vertex Shader e um Fragment Shader.
 GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
@@ -986,22 +622,7 @@ void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
         // variável abaixo para false.
         g_RightMouseButtonPressed = false;
     }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
-    {
-        // Se o usuário pressionou o botão esquerdo do mouse, guardamos a
-        // posição atual do cursor nas variáveis g_LastCursorPosX e
-        // g_LastCursorPosY.  Também, setamos a variável
-        // g_MiddleMouseButtonPressed como true, para saber que o usuário está
-        // com o botão esquerdo pressionado.
-        glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
-        g_MiddleMouseButtonPressed = true;
-    }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE)
-    {
-        // Quando o usuário soltar o botão esquerdo do mouse, atualizamos a
-        // variável abaixo para false.
-        g_MiddleMouseButtonPressed = false;
-    }
+
 }
 
 // Função callback chamada sempre que o usuário movimentar o cursor do mouse em
@@ -1037,38 +658,6 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
             g_CameraPhi = -0.1;
         if (g_CameraPhi <= 0.1 && g_CameraPhi > 0.0)
             g_CameraPhi = 0.1;
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
-
-    if (g_RightMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_ForearmAngleZ -= 0.01f * dx;
-        g_ForearmAngleX += 0.01f * dy;
-
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
-
-    if (g_MiddleMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_TorsoPositionX += 0.01f * dx;
-        g_TorsoPositionY -= 0.01f * dy;
-
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
@@ -1138,13 +727,7 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
     {
-        g_UsePerspectiveProjection = true;
-    }
-
-    // Se o usuário apertar a tecla O, utilizamos projeção ortográfica.
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-    {
-        g_UsePerspectiveProjection = false;
+        g_UseFreeCamera = !g_UseFreeCamera;
     }
 
     // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.

@@ -28,21 +28,6 @@ void LookAtCamera::calculateCameraPosition(){
 }
 
 
-void LookAtCamera::rotate(float dphi,float dtheta){
-    
-    this->phi = dphi;
-    this->theta = dtheta;
-    //float r = this->cameraDistance;
-    //float y = r*sin(dphi);
-    //float z = r*cos(dphi)*cos(dtheta);
-    //float x = r*cos(dphi)*sin(dtheta);
-    //this->position_c = glm::vec4(x,y,z,1.0f);
-   // this->view_vector = this->lookAtObject->getPosition() - this->position_c; // Vetor "view", sentido para onde a câmera está
-    
-    
-
-}
-
 void LookAtCamera::calculateZoom(double yoffset){
     // Atualizamos a distância da câmera para a origem utilizando a
     // movimentação da "rodinha", simulando um ZOOM.

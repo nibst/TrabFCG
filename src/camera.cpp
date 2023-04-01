@@ -24,37 +24,8 @@ glm::vec4 Camera::getCenterPosition(){
 void Camera::rotate(float dphi,float dtheta){
     this->phi = dphi;
     this->theta = dtheta;
-    float y = sin(dphi);
-    float z = cos(dphi)*cos(dtheta);
-    float x = cos(dphi)*sin(dtheta);
-    this->view_vector = glm::vec4(x,-y,z,0.0f);  // Vetor "view", sentido para onde a câmera está virada
 }
 
-void Camera:: moveRight(float delta_time){
-    glm::vec4 w = -this->view_vector;
-    glm::vec4 u = crossproduct(this->up_vector,w);
-    u = u / norm(u);
-    this->position_c += u * this->speed * delta_time;
-}
-void Camera::moveLeft(float delta_time){
-    moveRight(-delta_time);
-}
-void Camera:: moveFoward(float delta_time){
-    glm::vec4 w = -this->view_vector;
-    glm::vec4 u = crossproduct(this->up_vector,w);
-    w = w / norm(w);
-    u = u / norm(u);
-    this->position_c += -(glm::vec4(w.x,0.0f,w.z,w.w)) * speed * delta_time;
-}
-void Camera::moveBackward(float delta_time){
-    moveFoward(-delta_time);
-}
-void Camera::moveUp(float delta_time){
-    ;
-}
-void Camera::moveDown(float delta_time){
-    ;
-}
 
 void Camera::setScreenRatio(float screenRatio){
     this->screenRatio = screenRatio;

@@ -8,10 +8,8 @@ class LookAtCamera: public Camera{
         void setCameraDistance(float distance);
         float getCameraDistance();
         void calculateCameraPosition();
-        virtual void rotate(float dphi,float dtheta);
         virtual void calculateZoom(double yoffset);
-
-
+        
         void move();
 
     private:
