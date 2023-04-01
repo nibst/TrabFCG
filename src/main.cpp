@@ -416,16 +416,8 @@ int main(int argc, char *argv[])
             TextRendering_PrintString(window, std::to_string(kart.getNitroFuel()), 0.9f - (10 + 1) * charwidth, 1.0f - lineheight, 2.0f);
         }
 
-        // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-        // terceiro cubo.
-        TextRendering_ShowEulerAngles(window);
 
-        // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
-        TextRendering_ShowProjection(window);
-
-        // Imprimimos na tela informação sobre o número de quadros renderizados
-        // por segundo (frames per second).
-        // TextRendering_ShowFramesPerSecond(window);
+        TextRendering_ShowFramesPerSecond(window);
 
         windowManager->updateWindow();
     }
@@ -924,7 +916,7 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow *window)
     float lineheight = TextRendering_LineHeight(window);
     float charwidth = TextRendering_CharWidth(window);
 
-    TextRendering_PrintString(window, buffer, 1.0f - (numchars + 1) * charwidth, 1.0f - lineheight, 1.0f);
+    TextRendering_PrintString(window, buffer, 0.0f - (numchars + 1) * charwidth, 0.9f - lineheight, 2.0f);
 }
 
 // Função para debugging: imprime no terminal todas informações de um modelo
