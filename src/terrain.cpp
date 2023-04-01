@@ -5,7 +5,8 @@
 
 Terrain::Terrain(){;}
 Model Terrain::generateTerrain(VAO vao){
-    //AUTORIA DE TERCEIROS,FUNCAO MODIFICADA
+    //FONTE https://www.youtube.com/watch?v=yNYwZMmgTJk
+    //BASEADO NA FONTE,FUNCAO LEVEMENTE MODIFICADA 
     int count = VERTEX * VERTEX;
     std::vector<float> vertices (count*4,0.0f) ;
     std::vector<float>  normals(count*4,0.0f);

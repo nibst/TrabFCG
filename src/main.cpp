@@ -289,19 +289,9 @@ int main(int argc, char *argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        // glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera->getViewVector();
-        glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-
-        glm::vec4 w = -camera_view_vector;
-        glm::vec4 u = crossproduct(camera_up_vector, w);
-        w = w / norm(w);
-        u = u / norm(u);
-
         float current_time = (float)glfwGetTime();
         float delta_t = current_time - prev_time;
         prev_time = current_time;
-        glm::vec4 v;
         // Realiza movimentação de objetos
         if (tecla_D_pressionada){
             kart.setTurnDirection(Turn::right);
@@ -348,7 +338,7 @@ int main(int argc, char *argv[])
             }
         }
         //colisao com linha de chegada
-        if (Collisions::sphereBoxCollisionTest(kart.getPosition(), 1.0f, finishLine))
+        if (Collisions::spheresCollisionTest(kart.getPosition(), 1.0f, finishLine.getPosition(),1.5))
         {
             end = (float)glfwGetTime();
             gameWon = true;
